@@ -9,7 +9,7 @@ import (
 	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/modules/apps/transfer/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
