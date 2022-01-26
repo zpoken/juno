@@ -5,7 +5,6 @@ go 1.16
 require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/cosmos/cosmos-sdk v0.44.0
-	github.com/cosmos/ibc-go v1.2.0
 	github.com/dgraph-io/badger/v2 v2.2007.4 // indirect
 	github.com/dgraph-io/ristretto v0.1.0 // indirect
 	github.com/go-co-op/gocron v0.3.3
