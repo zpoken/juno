@@ -169,13 +169,6 @@ func (w Worker) ExportBlock(
 		return err
 	}
 
-	// Make sure the proposer exists
-	proposerAddr := sdk.ConsAddress(b.Block.ProposerAddress)
-	val := findValidatorByAddr(proposerAddr.String(), vals)
-	if val == nil {
-		return fmt.Errorf("failed to find validator by proposer address %s: %s", proposerAddr.String(), err)
-	}
-
 	// Save the block
 	err = w.db.SaveBlock(types.NewBlockFromTmBlock(b, sumGasTxs(txs)))
 	if err != nil {
@@ -215,17 +208,18 @@ func (w Worker) ExportCommit(commit *tmtypes.Commit, vals *tmctypes.ResultValida
 
 		valAddr := sdk.ConsAddress(commitSig.ValidatorAddress)
 		val := findValidatorByAddr(valAddr.String(), vals)
-		if val == nil {
-			return fmt.Errorf("failed to find validator by commit validator address %s", valAddr.String())
+		if val == nil {	
+			continue
 		}
-
-		signatures = append(signatures, types.NewCommitSig(
-			types.ConvertValidatorAddressToBech32String(commitSig.ValidatorAddress),
-			val.VotingPower,
-			val.ProposerPriority,
-			commit.Height,
-			commitSig.Timestamp,
-		))
+		if val != nil {
+			signatures = append(signatures, types.NewCommitSig(
+				types.ConvertValidatorAddressToBech32String(commitSig.ValidatorAddress),
+				val.VotingPower,
+				val.ProposerPriority,
+				commit.Height,
+				commitSig.Timestamp,
+			))
+		}
 	}
 
 	err := w.db.SaveCommitSignatures(signatures)
