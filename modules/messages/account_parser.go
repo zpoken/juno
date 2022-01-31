@@ -9,8 +9,9 @@ import (
 	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/modules/apps/transfer/types"
-	channeltypes "github.com/cosmos/ibc-go/modules/core/04-channel/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
+	ibcclienttypes "github.com/cosmos/ibc-go/v2/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -188,10 +189,20 @@ func IBCTransferMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, erro
 		// We are receiving some IBC tokens, so we need to update the receiver balance
 		// as well as the message signer (the relayer)
 		return []string{data.Receiver, msg.Signer}, nil
+
+	case *ibcclienttypes.MsgCreateClient:
+		return []string{msg.Signer}, nil
+	case *ibcclienttypes.MsgUpdateClient:
+		return []string{msg.ClientId, msg.Signer}, nil
+	case *ibcclienttypes.MsgSubmitMisbehaviour:
+		return []string{msg.ClientId, msg.Signer}, nil
+	case *ibcclienttypes.MsgUpgradeClient:
+		return []string{msg.ClientId, msg.Signer}, nil
 	}
 
 	return nil, MessageNotSupported(cosmosMsg)
 }
+
 
 // SlashingMessagesParser returns the list of all the accounts involved in the given
 // message if it's related to the x/slashing module
