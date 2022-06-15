@@ -17,6 +17,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	gammtypes "github.com/osmosis-labs/osmosis/v9/x/gamm/pool-models/balancer"
 )
 
 // MessageNotSupported returns an error telling that the given message is not supported
@@ -55,6 +56,7 @@ var CosmosMessageAddressesParser = JoinMessageParsers(
 	IBCTransferMessagesParser,
 	SlashingMessagesParser,
 	StakingMessagesParser,
+	OsmoMessageAddressesParser,
 	DefaultMessagesParser,
 )
 
@@ -226,6 +228,18 @@ func StakingMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	case *stakingtypes.MsgUndelegate:
 		return []string{msg.DelegatorAddress, msg.ValidatorAddress}, nil
 
+	}
+
+	return nil, MessageNotSupported(cosmosMsg)
+}
+
+
+// OsmoMessageAddressesParser represents a MessageAddressesParser for the x/gamm module
+func OsmoMessageAddressesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
+	switch msg := cosmosMsg.(type) {
+
+	case *gammtypes.MsgCreateBalancerPool:
+		return []string{msg.Sender, msg.FuturePoolGovernor}, nil
 	}
 
 	return nil, MessageNotSupported(cosmosMsg)
