@@ -41,7 +41,7 @@ func JoinMessageParsers(parsers ...MessageAddressesParser) MessageAddressesParse
 				return addresses, nil
 			}
 		}
-		return nil, MessageNotSupported(msg)
+		return nil, fmt.Errorf("ERROR MESSAGE IN JoinMessageParsers: %s ", msg)
 	}
 }
 
@@ -56,8 +56,8 @@ var CosmosMessageAddressesParser = JoinMessageParsers(
 	IBCTransferMessagesParser,
 	SlashingMessagesParser,
 	StakingMessagesParser,
-	OsmoMessageAddressesParser,
 	DefaultMessagesParser,
+	OsmoMessageAddressesParser,
 )
 
 // DefaultMessagesParser represents the default messages parser that simply returns the list
