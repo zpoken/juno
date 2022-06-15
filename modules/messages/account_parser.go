@@ -233,7 +233,6 @@ func StakingMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	return nil, MessageNotSupported(cosmosMsg)
 }
 
-
 // OsmoMessageAddressesParser represents a MessageAddressesParser for the x/gamm module
 func OsmoMessageAddressesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	switch msg := cosmosMsg.(type) {
@@ -242,5 +241,5 @@ func OsmoMessageAddressesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, err
 		return []string{msg.Sender, msg.FuturePoolGovernor}, nil
 	}
 
-	return nil, MessageNotSupported(cosmosMsg)
+	return nil, fmt.Errorf("ERROR MESSAGE: %s ", cosmosMsg.String())
 }
