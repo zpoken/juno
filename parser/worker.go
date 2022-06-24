@@ -120,12 +120,14 @@ func (w Worker) Process(height int64) error {
 		return fmt.Errorf("failed to get transactions for block: %s", err)
 	}
 
+	fmt.Printf("\n TXS %v \n ", txs)
+
 	vals, err := w.node.Validators(height)
 	if err != nil {
 		return fmt.Errorf("failed to get validators for block: %s", err)
 	}
 
-	return w.ExportBlock(block, events, txs, vals)
+	return w.ExportBlock(block, events, vals)
 }
 
 // ProcessTransactions fetches transactions for a given height and stores them into the database.
@@ -141,7 +143,9 @@ func (w Worker) ProcessTransactions(height int64) error {
 		return fmt.Errorf("failed to get transactions for block: %s", err)
 	}
 
-	return w.ExportTxs(txs)
+	fmt.Printf("\n ******* TXS ****** \n %v \n ", txs)
+	// return w.ExportTxs(txs)
+	return nil
 }
 
 // HandleGenesis accepts a GenesisDoc and calls all the registered genesis handlers
@@ -187,7 +191,7 @@ func (w Worker) SaveValidators(vals []*tmtypes.Validator) error {
 // and persists them to the database along with attributable metadata. An error
 // is returned if the write fails.
 func (w Worker) ExportBlock(
-	b *tmctypes.ResultBlock, r *tmctypes.ResultBlockResults, txs []*types.Tx, vals *tmctypes.ResultValidators,
+	b *tmctypes.ResultBlock, r *tmctypes.ResultBlockResults, vals *tmctypes.ResultValidators,
 ) error {
 	// Save all validators
 	err := w.SaveValidators(vals.Validators)
@@ -203,7 +207,7 @@ func (w Worker) ExportBlock(
 	}
 
 	// Save the block
-	err = w.db.SaveBlock(types.NewBlockFromTmBlock(b, sumGasTxs(txs)))
+	err = w.db.SaveBlock(types.NewBlockFromTmBlock(b, 0))
 	if err != nil {
 		return fmt.Errorf("failed to persist block: %s", err)
 	}
@@ -217,7 +221,7 @@ func (w Worker) ExportBlock(
 	// Call the block handlers
 	for _, module := range w.modules {
 		if blockModule, ok := module.(modules.BlockModule); ok {
-			err = blockModule.HandleBlock(b, r, txs, vals)
+			err = blockModule.HandleBlock(b, r, vals)
 			if err != nil {
 				w.logger.BlockError(module, b, err)
 			}
@@ -225,7 +229,7 @@ func (w Worker) ExportBlock(
 	}
 
 	// Export the transactions
-	return w.ExportTxs(txs)
+	return nil
 }
 
 // ExportCommit accepts a block commitment and a corresponding set of

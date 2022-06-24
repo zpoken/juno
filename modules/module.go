@@ -78,7 +78,7 @@ type BlockModule interface {
 	// For each transaction present inside the block, HandleTx will be called as well.
 	// NOTE. The returned error will be logged using the BlockError method. All other modules' handlers
 	// will still be called.
-	HandleBlock(block *tmctypes.ResultBlock, results *tmctypes.ResultBlockResults, txs []*types.Tx, vals *tmctypes.ResultValidators) error
+	HandleBlock(block *tmctypes.ResultBlock, results *tmctypes.ResultBlockResults, vals *tmctypes.ResultValidators) error
 }
 
 type TransactionModule interface {

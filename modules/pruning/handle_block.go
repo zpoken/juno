@@ -6,12 +6,11 @@ import (
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/forbole/juno/v3/database"
-	"github.com/forbole/juno/v3/types"
 )
 
 // HandleBlock implements modules.BlockModule
 func (m *Module) HandleBlock(
-	block *tmctypes.ResultBlock, _ *tmctypes.ResultBlockResults, _ []*types.Tx, _ *tmctypes.ResultValidators,
+	block *tmctypes.ResultBlock, _ *tmctypes.ResultBlockResults, _ *tmctypes.ResultValidators,
 ) error {
 	if block.Block.Height%m.cfg.Interval != 0 {
 		// Not an interval height, so just skip

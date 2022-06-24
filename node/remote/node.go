@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -11,18 +12,13 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"google.golang.org/grpc"
 
 	constypes "github.com/tendermint/tendermint/consensus/types"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 
 	"github.com/forbole/juno/v3/node"
 
-	"github.com/cosmos/cosmos-sdk/types/tx"
-
-	"github.com/forbole/juno/v3/types"
-
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	httpclient "github.com/tendermint/tendermint/rpc/client/http"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	jsonrpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
@@ -35,15 +31,19 @@ var (
 // Node implements a wrapper around both a Tendermint RPCConfig client and a
 // chain SDK REST client that allows for essential data queries.
 type Node struct {
-	ctx             context.Context
-	codec           codec.Marshaler
-	client          *httpclient.HTTP
-	txServiceClient tx.ServiceClient
-	grpcConnection  *grpc.ClientConn
+	ctx        context.Context
+	codec      codec.Marshaler
+	client     *httpclient.HTTP
+	clientNode string // Full (REST client) node
+
+	// rpcClient rpcclient.Client // Tendermint (RPC client) node
+	// txServiceClient tx.C
+	// grpcConnection  *grpc.ClientConn
 }
 
 // NewNode allows to build a new Node instance
 func NewNode(cfg *Details, codec codec.Marshaler) (*Node, error) {
+	clientNode := "http://138.197.71.46:26657"
 	httpClient, err := jsonrpcclient.DefaultHTTPClient(cfg.RPC.Address)
 	if err != nil {
 		return nil, err
@@ -66,18 +66,12 @@ func NewNode(cfg *Details, codec codec.Marshaler) (*Node, error) {
 		return nil, err
 	}
 
-	grpcConnection, err := CreateGrpcConnection(cfg.GRPC)
-	if err != nil {
-		return nil, err
-	}
-
 	return &Node{
 		ctx:   context.Background(),
 		codec: codec,
 
-		client:          rpcClient,
-		txServiceClient: tx.NewServiceClient(grpcConnection),
-		grpcConnection:  grpcConnection,
+		client:     rpcClient,
+		clientNode: clientNode,
 	}, nil
 }
 
@@ -191,33 +185,41 @@ func (cp *Node) BlockResults(height int64) (*tmctypes.ResultBlockResults, error)
 }
 
 // Tx implements node.Node
-func (cp *Node) Tx(hash string) (*types.Tx, error) {
-	res, err := cp.txServiceClient.GetTx(context.Background(), &tx.GetTxRequest{Hash: hash})
+func (cp *Node) Tx(hash string) (sdk.TxResponse, error) {
+	resp, err := http.Get(fmt.Sprintf("%s/tx/%s", cp.clientNode, hash))
 	if err != nil {
-		return nil, err
+		return sdk.TxResponse{}, err
 	}
 
-	// Decode messages
-	for _, msg := range res.Tx.Body.Messages {
-		var stdMsg sdk.Msg
-		err = cp.codec.UnpackAny(msg, &stdMsg)
-		if err != nil {
-			return nil, fmt.Errorf("error while unpacking message: %s", err)
-		}
-	}
+	defer resp.Body.Close()
 
-	convTx, err := types.NewTx(res.TxResponse, res.Tx)
+	bz, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error converting transaction: %s", err.Error())
+		return sdk.TxResponse{}, err
 	}
 
-	return convTx, nil
+	fmt.Printf("\n $$$$$$ resp %v $$$$$$$\n ", resp)
+	fmt.Printf("\n $$$$$$ bz %v $$$$$$$\n ", bz)
+
+	var tx sdk.TxResponse
+
+	if err := cp.codec.UnmarshalJSON(bz, &tx); err != nil {
+		return sdk.TxResponse{}, err
+	}
+
+	return tx, nil
 }
 
 // Txs implements node.Node
-func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]*types.Tx, error) {
-	txResponses := make([]*types.Tx, len(block.Block.Txs))
+func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]sdk.TxResponse, error) {
+	txResponses := make([]sdk.TxResponse, len(block.Block.Txs))
+
 	for i, tmTx := range block.Block.Txs {
+		var tx sdk.Result
+
+		if err := cp.codec.UnmarshalJSON(tmTx, &tx); err != nil {
+			return nil, fmt.Errorf("ERROR while unmarshaling: %s", err)
+		}
 		txResponse, err := cp.Tx(fmt.Sprintf("%X", tmTx.Hash()))
 		if err != nil {
 			return nil, err
@@ -229,10 +231,10 @@ func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]*types.Tx, error) {
 	return txResponses, nil
 }
 
-// TxSearch implements node.Node
-func (cp *Node) TxSearch(query string, page *int, perPage *int, orderBy string) (*tmctypes.ResultTxSearch, error) {
-	return cp.client.TxSearch(cp.ctx, query, false, page, perPage, orderBy)
-}
+// // TxSearch implements node.Node
+// func (cp *Node) TxSearch(query string, page *int, perPage *int, orderBy string) (*tmctypes.ResultTxSearch, error) {
+// 	return cp.client.TxSearch(cp.ctx, query, false, page, perPage, orderBy)
+// }
 
 // SubscribeEvents implements node.Node
 func (cp *Node) SubscribeEvents(subscriber, query string) (<-chan tmctypes.ResultEvent, context.CancelFunc, error) {
@@ -253,8 +255,4 @@ func (cp *Node) Stop() {
 		panic(fmt.Errorf("error while stopping proxy: %s", err))
 	}
 
-	err = cp.grpcConnection.Close()
-	if err != nil {
-		panic(fmt.Errorf("error while closing gRPC connection: %s", err))
-	}
 }

@@ -7,7 +7,6 @@ import (
 
 	parseblocks "github.com/forbole/juno/v3/cmd/parse/blocks"
 	parsegenesis "github.com/forbole/juno/v3/cmd/parse/genesis"
-	parsetransactions "github.com/forbole/juno/v3/cmd/parse/transactions"
 )
 
 // NewParseCmd returns the Cobra command allowing to parse some chain data without having to re-sync the whole database
@@ -21,7 +20,7 @@ func NewParseCmd(parseCfg *parsecmdtypes.Config) *cobra.Command {
 	cmd.AddCommand(
 		parseblocks.NewBlocksCmd(parseCfg),
 		parsegenesis.NewGenesisCmd(parseCfg),
-		parsetransactions.NewTransactionsCmd(parseCfg),
+		// parsetransactions.NewTransactionsCmd(parseCfg),
 	)
 
 	return cmd
