@@ -3,6 +3,7 @@ package remote
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -198,9 +199,6 @@ func (cp *Node) Tx(hash string) (sdk.TxResponse, error) {
 		return sdk.TxResponse{}, err
 	}
 
-	fmt.Printf("\n $$$$$$ resp %v $$$$$$$\n ", resp)
-	fmt.Printf("\n $$$$$$ bz %v $$$$$$$\n ", bz)
-
 	var tx sdk.TxResponse
 
 	if err := cp.codec.UnmarshalJSON(bz, &tx); err != nil {
@@ -214,20 +212,17 @@ func (cp *Node) Tx(hash string) (sdk.TxResponse, error) {
 func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]sdk.TxResponse, error) {
 	txResponses := make([]sdk.TxResponse, len(block.Block.Txs))
 
-	for i, tmTx := range block.Block.Txs {
-		var tx sdk.Result
-
-		if err := cp.codec.UnmarshalJSON(tmTx, &tx); err != nil {
-			return nil, fmt.Errorf("ERROR while unmarshaling: %s", err)
-		}
-		txResponse, err := cp.Tx(fmt.Sprintf("%X", tmTx.Hash()))
+	var transactions []ResponseTest
+	for _, t := range block.Block.Txs {
+		var tx map[string]json.RawMessage
+		err := json.Unmarshal(t, &tx)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to unmarshal genesis state: %s", err)
 		}
-
-		txResponses[i] = txResponse
+		transactions = append(transactions, NewResponseTest(string(tx["fee"]), string(tx["memo"]), string(tx["msg"]), string(tx["signatures"])))
 	}
 
+	fmt.Printf("\n ** Transactions %v ** ", transactions)
 	return txResponses, nil
 }
 
@@ -254,5 +249,30 @@ func (cp *Node) Stop() {
 	if err != nil {
 		panic(fmt.Errorf("error while stopping proxy: %s", err))
 	}
+}
 
+// type TxResponseTest struct {
+// 	Fee sdk.DecCoins `protobuf:"bytes,1,opt,name=fee,proto3" json:"fee,omitempty"`
+// 	Memo string `protobuf:"bytes,2,opt,name=memo,proto3" json:"memo,omitempty"`
+// 	Msg []sdk.MsgData `protobuf:"bytes,3,opt,name=msg,proto3" json:"msg,omitempty"`
+// 	Signatures []*types.Any `protobuf:"bytes,4,opt,name=signatures,proto3" json:"signatures,omitempty"`
+// }
+
+type ResponseTest struct {
+	Fee        string
+	Memo       string
+	Msg        string
+	Signatures string
+}
+
+// NewBlock allows to build a new Block instance
+func NewResponseTest(
+	fee string, memo string, msg string, sig string,
+) ResponseTest {
+	return ResponseTest{
+		Fee:        fee,
+		Memo:       memo,
+		Msg:        msg,
+		Signatures: sig,
+	}
 }
