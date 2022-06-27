@@ -20,6 +20,7 @@ import (
 	"github.com/forbole/juno/v3/node"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	bdtypes "github.com/forbole/juno/v3/types"
 	httpclient "github.com/tendermint/tendermint/rpc/client/http"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	jsonrpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
@@ -209,20 +210,18 @@ func (cp *Node) Tx(hash string) (sdk.TxResponse, error) {
 }
 
 // Txs implements node.Node
-func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]sdk.TxResponse, error) {
-	txResponses := make([]sdk.TxResponse, len(block.Block.Txs))
+func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]bdtypes.TxResponseTest, error) {
+	txResponses := make([]bdtypes.TxResponseTest, len(block.Block.Txs))
 
-	var transactions []ResponseTest
+	var transaction bdtypes.TxResponseTest
 	for _, t := range block.Block.Txs {
-		var tx map[string]json.RawMessage
-		err := json.Unmarshal(t, &tx)
+		err := json.Unmarshal(t, &transaction)
 		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal genesis state: %s", err)
+			return nil, fmt.Errorf("failed to unmarshal transaction with hash %s: %s", t.Hash, err)
 		}
-		transactions = append(transactions, NewResponseTest(string(tx["fee"]), string(tx["memo"]), string(tx["msg"]), string(tx["signatures"])))
+		txResponses = append(txResponses, bdtypes.NewTxResponseTest(transaction.Fee, transaction.Memo, transaction.Msg, transaction.Signatures))
 	}
 
-	fmt.Printf("\n ** Transactions %v ** ", transactions)
 	return txResponses, nil
 }
 
@@ -248,31 +247,5 @@ func (cp *Node) Stop() {
 	err := cp.client.Stop()
 	if err != nil {
 		panic(fmt.Errorf("error while stopping proxy: %s", err))
-	}
-}
-
-// type TxResponseTest struct {
-// 	Fee sdk.DecCoins `protobuf:"bytes,1,opt,name=fee,proto3" json:"fee,omitempty"`
-// 	Memo string `protobuf:"bytes,2,opt,name=memo,proto3" json:"memo,omitempty"`
-// 	Msg []sdk.MsgData `protobuf:"bytes,3,opt,name=msg,proto3" json:"msg,omitempty"`
-// 	Signatures []*types.Any `protobuf:"bytes,4,opt,name=signatures,proto3" json:"signatures,omitempty"`
-// }
-
-type ResponseTest struct {
-	Fee        string
-	Memo       string
-	Msg        string
-	Signatures string
-}
-
-// NewBlock allows to build a new Block instance
-func NewResponseTest(
-	fee string, memo string, msg string, sig string,
-) ResponseTest {
-	return ResponseTest{
-		Fee:        fee,
-		Memo:       memo,
-		Msg:        msg,
-		Signatures: sig,
 	}
 }

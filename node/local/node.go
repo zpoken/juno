@@ -31,6 +31,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	bdtypes "github.com/forbole/juno/v3/types"
 	constypes "github.com/tendermint/tendermint/consensus/types"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmnode "github.com/tendermint/tendermint/node"
@@ -438,7 +439,7 @@ func (cp *Node) Tx(hash string) (sdk.TxResponse, error) {
 }
 
 // Txs implements node.Node
-func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]sdk.TxResponse, error) {
+func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]bdtypes.TxResponseTest, error) {
 	// txResponses := make([]*types.Tx, len(block.Block.Txs))
 	// for i, tmTx := range block.Block.Txs {
 	// 	txResponse, err := cp.Tx(fmt.Sprintf("%X", tmTx.Hash()))
@@ -450,7 +451,7 @@ func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]sdk.TxResponse, error) {
 	// }
 
 	// return txResponses, nil
-	return []sdk.TxResponse{}, nil
+	return []bdtypes.TxResponseTest{}, nil
 
 }
 

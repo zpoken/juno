@@ -4,6 +4,7 @@ import (
 	"context"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	bdtypes "github.com/forbole/juno/v3/types"
 	constypes "github.com/tendermint/tendermint/consensus/types"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
@@ -37,7 +38,7 @@ type Node interface {
 	// Txs queries for all the transactions in a block. Transactions are returned
 	// in the sdk.TxResponse format which internally contains an sdk.Tx. An error is
 	// returned if any query fails.
-	Txs(block *tmctypes.ResultBlock) ([]sdk.TxResponse, error)
+	Txs(block *tmctypes.ResultBlock) ([]bdtypes.TxResponseTest, error)
 
 	// TxSearch defines a method to search for a paginated set of transactions by DeliverTx event search criteria.
 	// TxSearch(query string, page *int, perPage *int, orderBy string) (*tmctypes.ResultTxSearch, error)
