@@ -187,23 +187,23 @@ func (cp *Node) BlockResults(height int64) (*tmctypes.ResultBlockResults, error)
 }
 
 // Tx implements node.Node
-func (cp *Node) Tx(hash string) (sdk.TxResponse, error) {
-	resp, err := http.Get(fmt.Sprintf("%s/tx/%s", cp.clientNode, hash))
+func (cp *Node) Tx(hash string) (bdtypes.TxResponse, error) {
+	resp, err := http.Get(fmt.Sprintf("%s/tx?hash=0x%s&prove=false", cp.clientNode, hash))
 	if err != nil {
-		return sdk.TxResponse{}, err
+		return bdtypes.TxResponse{}, err
 	}
 
 	defer resp.Body.Close()
 
 	bz, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return sdk.TxResponse{}, err
+		return bdtypes.TxResponse{}, err
 	}
 
-	var tx sdk.TxResponse
-
-	if err := cp.codec.UnmarshalJSON(bz, &tx); err != nil {
-		return sdk.TxResponse{}, err
+	var tx bdtypes.TxResponse
+	err = json.Unmarshal([]byte(bz), &tx)
+	if err != nil {
+		return bdtypes.TxResponse{}, fmt.Errorf("error while unmarshaling tx: %s", err)
 	}
 
 	return tx, nil
