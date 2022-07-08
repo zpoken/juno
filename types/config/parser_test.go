@@ -19,10 +19,6 @@ node:
     client_name: juno
     address: http://localhost:26657
 
-  grpc:
-    address: localhost:9090
-    insecure: true
-
 logging:
   format: text
   level: debug

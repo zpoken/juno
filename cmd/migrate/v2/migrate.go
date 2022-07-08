@@ -49,10 +49,6 @@ func migrateConfig() (Config, error) {
 					cfg.RPC.Address,
 					cfg.RPC.MaxConnections,
 				),
-				remote.NewGrpcConfig(
-					cfg.Grpc.Address,
-					cfg.Grpc.Insecure,
-				),
 			),
 		},
 		Chain: config.ChainConfig{

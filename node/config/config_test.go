@@ -20,10 +20,6 @@ config:
     client_name: "juno"
     max_connections: 1
     address: "http://localhost:26657"
-
-  grpc:
-    insecure: true
-    address: "http://localhost:9090"
 `
 
 	var config nodeconfig.Config
@@ -68,10 +64,6 @@ config:
 				Address:        "http://localhost:26657",
 				MaxConnections: 10,
 			},
-			GRPC: &remote.GRPCConfig{
-				Address:  "http://localhost:9090",
-				Insecure: true,
-			},
 		},
 	}
 	bz, err = yaml.Marshal(&config)
@@ -84,9 +76,6 @@ config:
         client_name: juno
         address: http://localhost:26657
         max_connections: 10
-    grpc:
-        address: http://localhost:9090
-        insecure: true
 `
 	require.Equal(t, strings.TrimLeft(expected, "\n"), string(bz))
 }

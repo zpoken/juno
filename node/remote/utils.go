@@ -2,14 +2,10 @@ package remote
 
 import (
 	"context"
-	"crypto/tls"
 	"regexp"
 	"strconv"
 
-	"google.golang.org/grpc/credentials"
-
-	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
-	"google.golang.org/grpc"
+	// grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -21,29 +17,7 @@ var (
 func GetHeightRequestContext(context context.Context, height int64) context.Context {
 	return metadata.AppendToOutgoingContext(
 		context,
-		grpctypes.GRPCBlockHeightHeader,
+		// grpctypes.GRPCBlockHeightHeader,
 		strconv.FormatInt(height, 10),
 	)
-}
-
-// MustCreateGrpcConnection creates a new gRPC connection using the provided configuration and panics on error
-func MustCreateGrpcConnection(cfg *GRPCConfig) *grpc.ClientConn {
-	grpConnection, err := CreateGrpcConnection(cfg)
-	if err != nil {
-		panic(err)
-	}
-	return grpConnection
-}
-
-// CreateGrpcConnection creates a new gRPC client connection from the given configuration
-func CreateGrpcConnection(cfg *GRPCConfig) (*grpc.ClientConn, error) {
-	var grpcOpts []grpc.DialOption
-	if cfg.Insecure {
-		grpcOpts = append(grpcOpts, grpc.WithInsecure())
-	} else {
-		grpcOpts = append(grpcOpts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
-	}
-
-	address := HTTPProtocols.ReplaceAllString(cfg.Address, "")
-	return grpc.Dial(address, grpcOpts...)
 }

@@ -3,8 +3,6 @@ package remote
 import (
 	"context"
 
-	"google.golang.org/grpc"
-
 	"github.com/forbole/juno/v3/node"
 )
 
@@ -14,15 +12,13 @@ var (
 
 // Source implements the keeper.Source interface relying on a GRPC connection
 type Source struct {
-	Ctx      context.Context
-	GrpcConn *grpc.ClientConn
+	Ctx context.Context
 }
 
 // NewSource returns a new Source instance
-func NewSource(config *GRPCConfig) (*Source, error) {
+func NewSource() (*Source, error) {
 	return &Source{
-		Ctx:      context.Background(),
-		GrpcConn: MustCreateGrpcConnection(config),
+		Ctx: context.Background(),
 	}, nil
 }
 

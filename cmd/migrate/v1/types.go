@@ -2,7 +2,6 @@ package v1
 
 type Config struct {
 	RPC       *RPCConfig       `toml:"rpc"`
-	Grpc      *GrpcConfig      `toml:"grpc"`
 	Cosmos    *CosmosConfig    `toml:"cosmos"`
 	Database  *DatabaseConfig  `toml:"database"`
 	Logging   *LoggingConfig   `toml:"logging"`
@@ -15,11 +14,6 @@ type RPCConfig struct {
 	ClientName     string `toml:"client_name"`
 	Address        string `toml:"address"`
 	MaxConnections int    `toml:"max_connections"`
-}
-
-type GrpcConfig struct {
-	Address  string `toml:"address"`
-	Insecure bool   `toml:"insecure"`
 }
 
 type CosmosConfig struct {
