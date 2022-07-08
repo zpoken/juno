@@ -19,7 +19,6 @@ import (
 
 	"github.com/forbole/juno/v3/node"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	bdtypes "github.com/forbole/juno/v3/types"
 	httpclient "github.com/tendermint/tendermint/rpc/client/http"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -213,6 +212,7 @@ func (cp *Node) Tx(hash string) (bdtypes.TxResponse, error) {
 func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]bdtypes.TxResponseTest, error) {
 	txResponses := make([]bdtypes.TxResponseTest, len(block.Block.Txs))
 
+	// get tx details from the block
 	var transaction bdtypes.TxResponseTest
 	for _, t := range block.Block.Txs {
 		err := json.Unmarshal(t, &transaction)
@@ -220,6 +220,17 @@ func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]bdtypes.TxResponseTest, erro
 			return nil, fmt.Errorf("failed to unmarshal transaction with hash %s: %s", fmt.Sprintf("%X", t.Hash()), err)
 		}
 		txResponses = append(txResponses, bdtypes.NewTxResponseTest(transaction.Fee, transaction.Memo, transaction.Msg, transaction.Signatures))
+	}
+
+	response := make([]bdtypes.TxResponse, len(block.Block.Txs), len(block.Block.Txs))
+
+	// get tx details from the node
+	for i, tmTx := range block.Block.Txs {
+		txResponse, err := cp.Tx(fmt.Sprintf("%X", tmTx.Hash()))
+		if err != nil {
+			return nil, err
+		}
+		response[i] = txResponse
 	}
 
 	return txResponses, nil
