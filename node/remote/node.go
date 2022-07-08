@@ -231,7 +231,11 @@ func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]bdtypes.TxResponseTest, erro
 			return nil, err
 		}
 		response[i] = txResponse
+		fmt.Printf("#### txResponse %v #####", txResponse)
+
 	}
+
+	fmt.Printf("#### %v #####", response)
 
 	return txResponses, nil
 }

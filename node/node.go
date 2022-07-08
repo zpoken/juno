@@ -3,7 +3,7 @@ package node
 import (
 	"context"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	// sdk "github.com/cosmos/cosmos-sdk/types"
 	bdtypes "github.com/forbole/juno/v3/types"
 	constypes "github.com/tendermint/tendermint/consensus/types"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -33,7 +33,7 @@ type Node interface {
 	// Tx queries for a transaction from the REST client and decodes it into a sdk.Tx
 	// if the transaction exists. An error is returned if the tx doesn't exist or
 	// decoding fails.
-	Tx(hash string) (sdk.TxResponse, error)
+	Tx(hash string) (bdtypes.TxResponse, error)
 
 	// Txs queries for all the transactions in a block. Transactions are returned
 	// in the sdk.TxResponse format which internally contains an sdk.Tx. An error is
