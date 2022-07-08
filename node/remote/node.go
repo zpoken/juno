@@ -217,7 +217,7 @@ func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]bdtypes.TxResponseTest, erro
 	for _, t := range block.Block.Txs {
 		err := json.Unmarshal(t, &transaction)
 		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal transaction with hash %s: %s", t.Hash, err)
+			return nil, fmt.Errorf("failed to unmarshal transaction with hash %s: %s", fmt.Sprintf("%X", t.Hash()), err)
 		}
 		txResponses = append(txResponses, bdtypes.NewTxResponseTest(transaction.Fee, transaction.Memo, transaction.Msg, transaction.Signatures))
 	}
