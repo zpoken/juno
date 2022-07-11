@@ -264,3 +264,24 @@ func (cp *Node) Stop() {
 		panic(fmt.Errorf("error while stopping proxy: %s", err))
 	}
 }
+
+// Stop implements node.Node
+func (cp *Node) Supply() error {
+	nomicNode := "https://app.nomic.io:8443/"
+
+	resp, err := http.Get(fmt.Sprintf("%s/cosmos/bank/v1beta1/supply/unom", nomicNode))
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	bz, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("\n SUPPLY: %v \n ", bz)
+	return nil
+
+}

@@ -57,4 +57,6 @@ type Node interface {
 
 	// Stop defers the node stop execution to the client.
 	Stop()
+
+	Supply() error
 }

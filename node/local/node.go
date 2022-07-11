@@ -531,3 +531,8 @@ func (cp *Node) SubscribeNewBlocks(subscriber string) (<-chan tmctypes.ResultEve
 // Stop implements node.Node
 func (cp *Node) Stop() {
 }
+
+// Supply implements node.Node
+func (cp *Node) Supply() error {
+	return nil
+}
