@@ -42,6 +42,10 @@ type Database interface {
 	// An error is returned if the operation fails.
 	SaveMessage(msg *types.Message) error
 
+	// SaveSupply stores a total supply value.
+	// An error is returned if the operation fails.
+	SaveSupply(coins string, height int64) error
+
 	// Close closes the connection to the database
 	Close()
 }
