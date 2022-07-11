@@ -98,3 +98,12 @@ CREATE TABLE pruning
 (
     last_pruned_height BIGINT NOT NULL
 )
+
+CREATE TABLE supply
+(
+    one_row_id BOOLEAN NOT NULL DEFAULT TRUE PRIMARY KEY,
+    coins      TEXT  NOT NULL,
+    height     BIGINT  NOT NULL,
+    CHECK (one_row_id)
+);
+CREATE INDEX supply_height_index ON supply (height);
