@@ -6,6 +6,7 @@ import (
 	"github.com/forbole/juno/v3/database"
 	"github.com/forbole/juno/v3/logging"
 	"github.com/forbole/juno/v3/modules"
+	source "github.com/forbole/juno/v3/node"
 )
 
 var (
@@ -18,13 +19,15 @@ type Module struct {
 	cdc    codec.Marshaler
 	db     database.Database
 	logger logging.Logger
+	source source.Node
 }
 
-func NewModule(cdc codec.Marshaler, db database.Database, logger logging.Logger) *Module {
+func NewModule(cdc codec.Marshaler, db database.Database, logger logging.Logger, source source.Node) *Module {
 	return &Module{
 		cdc:    cdc,
 		db:     db,
 		logger: logger,
+		source: source,
 	}
 }
 
