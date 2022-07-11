@@ -266,22 +266,19 @@ func (cp *Node) Stop() {
 }
 
 // Stop implements node.Node
-func (cp *Node) Supply() error {
+func (cp *Node) Supply() (string, error) {
 	nomicNode := "https://app.nomic.io:8443/"
-
 	resp, err := http.Get(fmt.Sprintf("%s/cosmos/bank/v1beta1/supply/unom", nomicNode))
 	if err != nil {
-		return err
+		return "", fmt.Errorf("error while getting total supply: %s", err)
 	}
 
 	defer resp.Body.Close()
 
 	bz, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return "", fmt.Errorf("error while processing total supply: %s", err)
 	}
 
-	fmt.Printf("\n SUPPLY: %v \n ", bz)
-	return nil
-
+	return string(bz), nil
 }
