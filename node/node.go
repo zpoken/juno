@@ -4,6 +4,7 @@ import (
 	"context"
 
 	// sdk "github.com/cosmos/cosmos-sdk/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	bdtypes "github.com/forbole/juno/v3/types"
 	constypes "github.com/tendermint/tendermint/consensus/types"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -61,4 +62,6 @@ type Node interface {
 	Supply() (string, error)
 
 	Inflation() (string, error)
+
+	StakingPool() (stakingtypes.Pool, error)
 }

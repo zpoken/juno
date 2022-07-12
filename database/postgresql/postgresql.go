@@ -381,3 +381,22 @@ WHERE inflation.height <= excluded.height`
 
 	return nil
 }
+
+// SaveStakingPool allows to store staking pool values for the given height
+func (db *Database) SaveStakingPool(pool *types.StakingPool) error {
+	stmt := `
+INSERT INTO staking_pool (bonded_tokens, not_bonded_tokens, height) 
+VALUES ($1, $2, $3)
+ON CONFLICT (one_row_id) DO UPDATE 
+    SET bonded_tokens = excluded.bonded_tokens, 
+        not_bonded_tokens = excluded.not_bonded_tokens, 
+        height = excluded.height
+WHERE staking_pool.height <= excluded.height`
+
+	_, err := db.Sql.Exec(stmt, pool.BondedTokens.String(), pool.NotBondedTokens.String(), pool.Height)
+	if err != nil {
+		return fmt.Errorf("error while storing staking pool: %s", err)
+	}
+
+	return nil
+}

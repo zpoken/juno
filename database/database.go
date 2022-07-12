@@ -50,6 +50,10 @@ type Database interface {
 	// An error is returned if the operation fails.
 	SaveInflation(inflation string, height int64) error
 
+	// SaveStakingPool stores the staking pool value.
+	// An error is returned if the operation fails.
+	SaveStakingPool(pool *types.StakingPool) error
+
 	// GetLastBlockHeight returns the latest block height stored in databasee.
 	// An error is returned if the operation fails.
 	GetLastBlockHeight() (int64, error)

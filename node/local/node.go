@@ -30,6 +30,7 @@ import (
 	"path"
 	"time"
 
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	bdtypes "github.com/forbole/juno/v3/types"
 	constypes "github.com/tendermint/tendermint/consensus/types"
 	tmjson "github.com/tendermint/tendermint/libs/json"
@@ -540,4 +541,9 @@ func (cp *Node) Supply() (string, error) {
 // Inflation implements node.Node
 func (cp *Node) Inflation() (string, error) {
 	return "", nil
+}
+
+// StakingPool implements node.Node
+func (cp *Node) StakingPool() (stakingtypes.Pool, error) {
+	return stakingtypes.Pool{}, nil
 }

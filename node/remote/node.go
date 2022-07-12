@@ -20,6 +20,7 @@ import (
 	"github.com/forbole/juno/v3/node"
 	"github.com/forbole/juno/v3/types"
 
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	bdtypes "github.com/forbole/juno/v3/types"
 	httpclient "github.com/tendermint/tendermint/rpc/client/http"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -305,4 +306,27 @@ func (cp *Node) Inflation() (string, error) {
 	}
 
 	return string(inflation.Inflation), nil
+}
+
+// StkingPool implements node.Node
+func (cp *Node) StakingPool() (stakingtypes.Pool, error) {
+	resp, err := http.Get(fmt.Sprintf("%s/cosmos/staking/v1beta1/pool", nomicNode))
+	if err != nil {
+		return stakingtypes.Pool{}, fmt.Errorf("error while getting staking pool: %s", err)
+	}
+
+	defer resp.Body.Close()
+
+	bz, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return stakingtypes.Pool{}, fmt.Errorf("error while processing staking pool: %s", err)
+	}
+
+	var stakingPool stakingtypes.Pool
+	err = json.Unmarshal(bz, &stakingPool)
+	if err != nil {
+		return stakingtypes.Pool{}, fmt.Errorf("error while unmarshaling staking pool: %s", err)
+	}
+
+	return stakingPool, nil
 }
