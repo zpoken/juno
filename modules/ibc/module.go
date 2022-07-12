@@ -1,4 +1,4 @@
-package mint
+package ibc
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -14,7 +14,7 @@ var (
 	_ modules.PeriodicOperationsModule = &Module{}
 )
 
-// Module represents the mint module
+// Module represents the ibc module
 type Module struct {
 	cdc    codec.Marshaler
 	db     database.Database
@@ -33,5 +33,5 @@ func NewModule(cdc codec.Marshaler, db database.Database, logger logging.Logger,
 
 // Name implements modules.Module
 func (m *Module) Name() string {
-	return "mint"
+	return "ibc"
 }

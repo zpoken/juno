@@ -54,9 +54,13 @@ type Database interface {
 	// An error is returned if the operation fails.
 	SaveStakingPool(pool *types.StakingPool) error
 
-	// GetLastBlockHeight returns the latest block height stored in databasee.
+	// GetLastBlockHeight returns the latest block height stored in database.
 	// An error is returned if the operation fails.
 	GetLastBlockHeight() (int64, error)
+
+	// SaveIBCParams stores the ibc tx params value.
+	// An error is returned if the operation fails.
+	SaveIBCParams(params *types.IBCParams) error
 
 	// Close closes the connection to the database
 	Close()

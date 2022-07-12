@@ -7,6 +7,7 @@ import (
 	"github.com/forbole/juno/v3/node"
 
 	"github.com/forbole/juno/v3/modules/bank"
+	"github.com/forbole/juno/v3/modules/ibc"
 	"github.com/forbole/juno/v3/modules/mint"
 	"github.com/forbole/juno/v3/modules/staking"
 	"github.com/forbole/juno/v3/modules/telemetry"
@@ -90,6 +91,7 @@ func NewDefaultRegistrar(parser messages.MessageAddressesParser) *DefaultRegistr
 func (r *DefaultRegistrar) BuildModules(ctx Context) modules.Modules {
 	return modules.Modules{
 		bank.NewModule(ctx.EncodingConfig.Marshaler, ctx.Database, ctx.Logger, ctx.Proxy),
+		ibc.NewModule(ctx.EncodingConfig.Marshaler, ctx.Database, ctx.Logger, ctx.Proxy),
 		messages.NewModule(r.parser, ctx.EncodingConfig.Marshaler, ctx.Database),
 		mint.NewModule(ctx.EncodingConfig.Marshaler, ctx.Database, ctx.Logger, ctx.Proxy),
 		pruning.NewModule(ctx.JunoConfig, ctx.Database, ctx.Logger),

@@ -26,6 +26,7 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/forbole/juno/v3/node"
+	"github.com/forbole/juno/v3/types"
 
 	"path"
 	"time"
@@ -546,4 +547,9 @@ func (cp *Node) Inflation() (string, error) {
 // StakingPool implements node.Node
 func (cp *Node) StakingPool() (stakingtypes.Pool, error) {
 	return stakingtypes.Pool{}, nil
+}
+
+// IBCParams implements node.Node
+func (cp *Node) IBCParams() (types.IBCTransactionParams, error) {
+	return types.IBCTransactionParams{}, nil
 }
