@@ -536,3 +536,8 @@ func (cp *Node) Stop() {
 func (cp *Node) Supply() (string, error) {
 	return "", nil
 }
+
+// Inflation implements node.Node
+func (cp *Node) Inflation() (string, error) {
+	return "", nil
+}

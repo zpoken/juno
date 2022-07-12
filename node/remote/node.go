@@ -18,6 +18,7 @@ import (
 	tmjson "github.com/tendermint/tendermint/libs/json"
 
 	"github.com/forbole/juno/v3/node"
+	"github.com/forbole/juno/v3/types"
 
 	bdtypes "github.com/forbole/juno/v3/types"
 	httpclient "github.com/tendermint/tendermint/rpc/client/http"
@@ -28,6 +29,8 @@ import (
 var (
 	_ node.Node = &Node{}
 )
+
+var nomicNode = "https://app.nomic.io:8443/"
 
 // Node implements a wrapper around both a Tendermint RPCConfig client and a
 // chain SDK REST client that allows for essential data queries.
@@ -265,9 +268,8 @@ func (cp *Node) Stop() {
 	}
 }
 
-// Stop implements node.Node
+// Supply implements node.Node
 func (cp *Node) Supply() (string, error) {
-	nomicNode := "https://app.nomic.io:8443/"
 	resp, err := http.Get(fmt.Sprintf("%s/cosmos/bank/v1beta1/supply/unom", nomicNode))
 	if err != nil {
 		return "", fmt.Errorf("error while getting total supply: %s", err)
@@ -281,4 +283,26 @@ func (cp *Node) Supply() (string, error) {
 	}
 
 	return string(bz), nil
+}
+
+// Inflation implements node.Node
+func (cp *Node) Inflation() (string, error) {
+	resp, err := http.Get(fmt.Sprintf("%s/cosmos/mint/v1beta1/inflation", nomicNode))
+	if err != nil {
+		return "", fmt.Errorf("error while getting inflation: %s", err)
+	}
+
+	defer resp.Body.Close()
+
+	bz, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("error while processing inflation: %s", err)
+	}
+	var inflation types.InflationResponse
+	err = json.Unmarshal(bz, &inflation)
+	if err != nil {
+		return "", fmt.Errorf("error while unmarshaling inflation: %s", err)
+	}
+
+	return string(inflation.Inflation), nil
 }

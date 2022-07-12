@@ -46,6 +46,14 @@ type Database interface {
 	// An error is returned if the operation fails.
 	SaveSupply(coins string, height int64) error
 
+	// SaveInflation stores the inflation value.
+	// An error is returned if the operation fails.
+	SaveInflation(inflation string, height int64) error
+
+	// GetLastBlockHeight returns the latest block height stored in databasee.
+	// An error is returned if the operation fails.
+	GetLastBlockHeight() (int64, error)
+
 	// Close closes the connection to the database
 	Close()
 }

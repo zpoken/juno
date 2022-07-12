@@ -7,11 +7,14 @@ import (
 	"strings"
 
 	"github.com/forbole/juno/v3/logging"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/lib/pq"
 
 	_ "github.com/lib/pq" // nolint
+
+	dbtypes "github.com/forbole/juno/v3/database/types"
 
 	"github.com/forbole/juno/v3/database"
 	"github.com/forbole/juno/v3/types"
@@ -52,6 +55,7 @@ func Builder(ctx *database.Context) (database.Database, error) {
 
 	return &Database{
 		Sql:            postgresDb,
+		Sqlx:           sqlx.NewDb(postgresDb, "postgresql"),
 		EncodingConfig: ctx.EncodingConfig,
 		Logger:         ctx.Logger,
 	}, nil
@@ -64,6 +68,7 @@ var _ database.Database = &Database{}
 // for data aggregation and exporting.
 type Database struct {
 	Sql            *sql.DB
+	Sqlx           *sqlx.DB
 	EncodingConfig *params.EncodingConfig
 	Logger         logging.Logger
 }
@@ -328,5 +333,51 @@ WHERE supply.height <= excluded.height`
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+// GetLastBlock returns the last block stored inside the database
+func (db *Database) GetLastBlock() (*dbtypes.BlockRow, error) {
+	stmt := `SELECT * FROM block ORDER BY height DESC LIMIT 1`
+
+	var blocks []dbtypes.BlockRow
+	if err := db.Sqlx.Select(&blocks, stmt); err != nil {
+		return nil, err
+	}
+
+	if len(blocks) == 0 {
+		return nil, fmt.Errorf("cannot get block, no blocks saved")
+	}
+
+	return &blocks[0], nil
+}
+
+// GetLastBlockHeight returns the height of last block stored inside the database
+func (db *Database) GetLastBlockHeight() (int64, error) {
+	block, err := db.GetLastBlock()
+	if err != nil {
+		return 0, err
+	}
+	if block == nil {
+		return 0, fmt.Errorf("no blocks stored in database")
+	}
+	return block.Height, nil
+}
+
+// SaveInflation allows to store the inflation for the given block height
+func (db *Database) SaveInflation(inflation string, height int64) error {
+	stmt := `
+INSERT INTO inflation (value, height) 
+VALUES ($1, $2) 
+ON CONFLICT (one_row_id) DO UPDATE 
+    SET value = excluded.value, 
+        height = excluded.height 
+WHERE inflation.height <= excluded.height`
+
+	_, err := db.Sql.Exec(stmt, inflation, height)
+	if err != nil {
+		return fmt.Errorf("error while storing inflation: %s", err)
+	}
+
 	return nil
 }

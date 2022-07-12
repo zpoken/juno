@@ -59,4 +59,6 @@ type Node interface {
 	Stop()
 
 	Supply() (string, error)
+
+	Inflation() (string, error)
 }

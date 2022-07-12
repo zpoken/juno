@@ -84,3 +84,7 @@ type TxResponse struct {
 	Timestamp string `protobuf:"bytes,12,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	JsonRPC   string `protobuf:"bytes,13,opt,name=jsonrpc,proto3" json:"jsonrpc,omitempty"`
 }
+
+type InflationResponse struct {
+	Inflation string `json:"inflation" yaml:"inflation"`
+}
