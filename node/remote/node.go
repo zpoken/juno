@@ -273,20 +273,28 @@ func (cp *Node) Stop() {
 }
 
 // Supply implements node.Node
-func (cp *Node) Supply() (string, error) {
+func (cp *Node) Supply() (sdk.Coins, error) {
 	resp, err := http.Get(fmt.Sprintf("%s/cosmos/bank/v1beta1/supply/unom", nomicNode))
 	if err != nil {
-		return "", fmt.Errorf("error while getting total supply: %s", err)
+		return sdk.Coins{}, fmt.Errorf("error while getting total supply: %s", err)
 	}
 
 	defer resp.Body.Close()
 
 	bz, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("error while processing total supply: %s", err)
+		return sdk.Coins{}, fmt.Errorf("error while processing total supply: %s", err)
 	}
 
-	return string(bz), nil
+	var supply *banktypes.QuerySupplyOfResponse
+	err = json.Unmarshal(bz, &supply)
+	if err != nil {
+		return sdk.Coins{}, fmt.Errorf("error while unmarshaling supply: %s", err)
+	}
+	var totalSupply []sdk.Coin
+	totalSupply = append(totalSupply, supply.Amount)
+
+	return totalSupply, nil
 }
 
 // Inflation implements node.Node

@@ -99,10 +99,16 @@ CREATE TABLE pruning
     last_pruned_height BIGINT NOT NULL
 )
 
+CREATE TYPE COIN AS
+(
+    denom  TEXT,
+    amount TEXT
+);
+
 CREATE TABLE supply
 (
     one_row_id BOOLEAN NOT NULL DEFAULT TRUE PRIMARY KEY,
-    coins      TEXT  NOT NULL,
+    coins      COIN[]  NOT NULL,
     height     BIGINT  NOT NULL,
     CHECK (one_row_id)
 );

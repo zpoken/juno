@@ -17,6 +17,7 @@ import (
 
 	dbtypes "github.com/forbole/juno/v3/database/types"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/forbole/juno/v3/database"
 	"github.com/forbole/juno/v3/types"
 	"github.com/forbole/juno/v3/types/config"
@@ -321,7 +322,7 @@ WHERE message.transaction_hash = transaction.hash AND transaction.height = $1
 }
 
 // SaveSupply allows to store total supply for a given height
-func (db *Database) SaveSupply(coins string, height int64) error {
+func (db *Database) SaveSupply(coins sdk.Coins, height int64) error {
 	query := `
 INSERT INTO supply (coins, height) 
 VALUES ($1, $2) 
@@ -330,10 +331,11 @@ ON CONFLICT (one_row_id) DO UPDATE
     	height = excluded.height
 WHERE supply.height <= excluded.height`
 
-	_, err := db.Sql.Exec(query, coins, height)
+	_, err := db.Sql.Exec(query, pq.Array(dbtypes.NewDbCoins(coins)), height)
 	if err != nil {
-		return err
+		return fmt.Errorf("error while storing supply: %s", err)
 	}
+
 	return nil
 }
 

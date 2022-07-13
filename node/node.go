@@ -60,7 +60,7 @@ type Node interface {
 	// Stop defers the node stop execution to the client.
 	Stop()
 
-	Supply() (string, error)
+	Supply() (sdk.Coins, error)
 
 	Inflation() (string, error)
 

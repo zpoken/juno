@@ -7,6 +7,7 @@ import (
 
 	databaseconfig "github.com/forbole/juno/v3/database/config"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/forbole/juno/v3/types"
 )
 
@@ -44,7 +45,7 @@ type Database interface {
 
 	// SaveSupply stores a total supply value.
 	// An error is returned if the operation fails.
-	SaveSupply(coins string, height int64) error
+	SaveSupply(coins sdk.Coins, height int64) error
 
 	// SaveInflation stores the inflation value.
 	// An error is returned if the operation fails.
