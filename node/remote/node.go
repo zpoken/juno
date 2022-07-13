@@ -20,7 +20,10 @@ import (
 	"github.com/forbole/juno/v3/node"
 	"github.com/forbole/juno/v3/types"
 
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	bdtypes "github.com/forbole/juno/v3/types"
 	httpclient "github.com/tendermint/tendermint/rpc/client/http"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -352,4 +355,27 @@ func (cp *Node) IBCParams() (types.IBCTransactionParams, error) {
 	}
 
 	return stakingPool.Params, nil
+}
+
+// AccountBalance implements node.Node
+func (cp *Node) AccountBalance(address string) (sdk.Coins, error) {
+	resp, err := http.Get(fmt.Sprintf("%s/cosmos/bank/v1beta1/balances/%s", nomicNode, address))
+	if err != nil {
+		return sdk.Coins{}, fmt.Errorf("error while getting account balance of address %s: %s", address, err)
+	}
+
+	defer resp.Body.Close()
+
+	bz, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return sdk.Coins{}, fmt.Errorf("error while processing account balance of address %s: %s", address, err)
+	}
+
+	var balance banktypes.QueryAllBalancesResponse
+	err = json.Unmarshal(bz, &balance)
+	if err != nil {
+		return sdk.Coins{}, fmt.Errorf("error while unmarshaling account balance of address %s: %s", address, err)
+	}
+
+	return balance.Balances, nil
 }

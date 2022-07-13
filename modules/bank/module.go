@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	_ modules.Module      = &Module{}
-	_ modules.BlockModule = &Module{}
+	_ modules.Module                   = &Module{}
+	_ modules.BlockModule              = &Module{}
+	_ modules.PeriodicOperationsModule = &Module{}
 )
 
 // Module represents the bank module

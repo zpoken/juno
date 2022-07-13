@@ -3,7 +3,7 @@ package node
 import (
 	"context"
 
-	// sdk "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/forbole/juno/v3/types"
 	bdtypes "github.com/forbole/juno/v3/types"
@@ -67,4 +67,6 @@ type Node interface {
 	StakingPool() (stakingtypes.Pool, error)
 
 	IBCParams() (types.IBCTransactionParams, error)
+
+	AccountBalance(address string) (sdk.Coins, error)
 }

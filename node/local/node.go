@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 
 	"github.com/cosmos/cosmos-sdk/client"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/viper"
 	cfg "github.com/tendermint/tendermint/config"
 	cs "github.com/tendermint/tendermint/consensus"
@@ -552,4 +553,9 @@ func (cp *Node) StakingPool() (stakingtypes.Pool, error) {
 // IBCParams implements node.Node
 func (cp *Node) IBCParams() (types.IBCTransactionParams, error) {
 	return types.IBCTransactionParams{}, nil
+}
+
+// AccountBalance implements node.Node
+func (cp *Node) AccountBalance(address string) (sdk.Coins, error) {
+	return sdk.Coins{}, nil
 }
