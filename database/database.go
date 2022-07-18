@@ -1,6 +1,8 @@
 package database
 
 import (
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 
 	"github.com/forbole/juno/v3/logging"
@@ -8,6 +10,7 @@ import (
 	databaseconfig "github.com/forbole/juno/v3/database/config"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	dbtypes "github.com/forbole/juno/v3/database/types"
 	"github.com/forbole/juno/v3/types"
 )
 
@@ -59,6 +62,10 @@ type Database interface {
 	// An error is returned if the operation fails.
 	GetLastBlockHeight() (int64, error)
 
+	// GetLastBlock returns the latest block store in db.
+	// An error is returned if the operation fails.
+	GetLastBlock() (*dbtypes.BlockRow, error)
+
 	// SaveIBCParams stores the ibc tx params value.
 	// An error is returned if the operation fails.
 	SaveIBCParams(params *types.IBCParams) error
@@ -71,6 +78,46 @@ type Database interface {
 	// An error is returned if the operation fails.
 	SaveToken(token types.Token) error
 
+	// SaveGenesis stores the genesis details.
+	// An error is returned if the operation fails.
+	SaveGenesis(genesis *types.Genesis) error
+
+	// GetGenesis returns the genesis details.
+	// An error is returned if the operation fails.
+	GetGenesis() (*types.Genesis, error)
+
+	// SaveAverageBlockTimeGenesis stores the average
+	// block time from genesis. 
+	// An error is returned if the operation fails.
+	SaveAverageBlockTimeGenesis(averageTime float64, height int64) error
+
+	// SaveAverageBlockTimePerDay stores the average
+	// block time per day. 
+	// An error is returned if the operation fails.
+	SaveAverageBlockTimePerDay(averageTime float64, height int64) error
+
+	// SaveAverageBlockTimePerHour stores the average
+	// block time per hour. 
+	// An error is returned if the operation fails.
+	SaveAverageBlockTimePerHour(averageTime float64, height int64) error
+
+	// SaveAverageBlockTimePerMin stores the average
+	// block time per minute. 
+	// An error is returned if the operation fails.
+	SaveAverageBlockTimePerMin(averageTime float64, height int64) error
+
+	// GetBlockHeightTimeDayAgo returns block height from day ago.
+	// An error is returned if the operation fails.
+	GetBlockHeightTimeDayAgo(now time.Time) (dbtypes.BlockRow, error)
+
+	// GetBlockHeightTimeHourAgo returns block height from one hour ago.
+	// An error is returned if the operation fails.
+	GetBlockHeightTimeHourAgo(now time.Time) (dbtypes.BlockRow, error)
+
+	// GetBlockHeightTimeMinuteAgo returns block height from one minute ago.
+	// An error is returned if the operation fails.
+	GetBlockHeightTimeMinuteAgo(now time.Time) (dbtypes.BlockRow, error)
+	
 	// Close closes the connection to the database
 	Close()
 }

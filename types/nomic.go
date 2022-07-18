@@ -1,6 +1,8 @@
 package types
 
 import (
+	"time"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/types"
 )
@@ -148,5 +150,21 @@ func NewTokenUnit(denom string, exponent int, aliases []string, priceID string) 
 		Exponent: exponent,
 		Aliases:  aliases,
 		PriceID:  priceID,
+	}
+}
+
+// Genesis contains the useful information about the genesis
+type Genesis struct {
+	ChainID       string
+	Time          time.Time
+	InitialHeight int64
+}
+
+// NewGenesis allows to build a new Genesis instance
+func NewGenesis(chainID string, startTime time.Time, initialHeight int64) *Genesis {
+	return &Genesis{
+		ChainID:       chainID,
+		Time:          startTime,
+		InitialHeight: initialHeight,
 	}
 }

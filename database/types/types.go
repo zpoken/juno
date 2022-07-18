@@ -68,6 +68,24 @@ func NewDBSignatures(signaturesList []types.BDSignatures) []string {
 
 // _________________________________________________________
 
+type GenesisRow struct {
+	OneRowID      bool      `db:"one_row_id"`
+	ChainID       string    `db:"chain_id"`
+	Time          time.Time `db:"time"`
+	InitialHeight int64     `db:"initial_height"`
+}
+
+func NewGenesisRow(chainID string, time time.Time, initialHeight int64) GenesisRow {
+	return GenesisRow{
+		OneRowID:      true,
+		ChainID:       chainID,
+		Time:          time,
+		InitialHeight: initialHeight,
+	}
+}
+
+// _________________________________________________________
+
 func ToNullString(value string) sql.NullString {
 	value = strings.TrimSpace(value)
 	return sql.NullString{

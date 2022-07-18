@@ -1,9 +1,3 @@
-CREATE TYPE COIN AS
-(
-    denom  TEXT,
-    amount TEXT
-);
-
 CREATE TABLE validator
 (
     consensus_address TEXT NOT NULL PRIMARY KEY, /* Validator consensus address */
@@ -95,6 +89,13 @@ CREATE TABLE pruning
     last_pruned_height BIGINT NOT NULL
 )
 
+/* -------- BANK -------- */
+
+CREATE TYPE COIN AS
+(
+    denom  TEXT,
+    amount TEXT
+);
 
 CREATE TABLE supply
 (
@@ -104,6 +105,17 @@ CREATE TABLE supply
     CHECK (one_row_id)
 );
 CREATE INDEX supply_height_index ON supply (height);
+
+
+CREATE TABLE account_balance
+(
+    address TEXT   NOT NULL PRIMARY KEY,
+    coins   COIN[] NOT NULL DEFAULT '{}',
+    height  BIGINT NOT NULL
+);
+CREATE INDEX account_balance_height_index ON account_balance (height);
+
+/* -------- MINT -------- */
 
 CREATE TABLE inflation
 (
@@ -124,6 +136,8 @@ CREATE TABLE staking_pool
 );
 CREATE INDEX staking_pool_height_index ON staking_pool (height);
 
+/* -------- IBC -------- */
+
 CREATE TABLE ibc_params
 (
     one_row_id BOOLEAN NOT NULL DEFAULT TRUE PRIMARY KEY,
@@ -133,13 +147,7 @@ CREATE TABLE ibc_params
 );
 CREATE INDEX ibc_params_height_index ON ibc_params (height);
 
-CREATE TABLE account_balance
-(
-    address TEXT   NOT NULL PRIMARY KEY,
-    coins   COIN[] NOT NULL DEFAULT '{}',
-    height  BIGINT NOT NULL
-);
-CREATE INDEX account_balance_height_index ON account_balance (height);
+/* -------- PRICEFEED -------- */
 
 CREATE TABLE token
 (
@@ -154,3 +162,50 @@ CREATE TABLE token_unit
     aliases    TEXT[],
     price_id   TEXT
 );
+
+/* -------- CONSENSUS -------- */
+
+CREATE TABLE genesis
+(
+    one_row_id     BOOL      NOT NULL DEFAULT TRUE PRIMARY KEY,
+    chain_id       TEXT      NOT NULL,
+    time           TIMESTAMP NOT NULL,
+    initial_height BIGINT    NOT NULL,
+    CHECK (one_row_id)
+);
+
+CREATE TABLE average_block_time_per_minute
+(
+    one_row_id   BOOL    NOT NULL DEFAULT TRUE PRIMARY KEY,
+    average_time DECIMAL NOT NULL,
+    height       BIGINT  NOT NULL,
+    CHECK (one_row_id)
+);
+CREATE INDEX average_block_time_per_minute_height_index ON average_block_time_per_minute (height);
+
+CREATE TABLE average_block_time_per_hour
+(
+    one_row_id   BOOL    NOT NULL DEFAULT TRUE PRIMARY KEY,
+    average_time DECIMAL NOT NULL,
+    height       BIGINT  NOT NULL,
+    CHECK (one_row_id)
+);
+CREATE INDEX average_block_time_per_hour_height_index ON average_block_time_per_hour (height);
+
+CREATE TABLE average_block_time_per_day
+(
+    one_row_id   BOOL    NOT NULL DEFAULT TRUE PRIMARY KEY,
+    average_time DECIMAL NOT NULL,
+    height       BIGINT  NOT NULL,
+    CHECK (one_row_id)
+);
+CREATE INDEX average_block_time_per_day_height_index ON average_block_time_per_day (height);
+
+CREATE TABLE average_block_time_from_genesis
+(
+    one_row_id   BOOL    NOT NULL DEFAULT TRUE PRIMARY KEY,
+    average_time DECIMAL NOT NULL,
+    height       BIGINT  NOT NULL,
+    CHECK (one_row_id)
+);
+CREATE INDEX average_block_time_from_genesis_height_index ON average_block_time_from_genesis (height);
