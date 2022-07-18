@@ -1,3 +1,9 @@
+CREATE TYPE COIN AS
+(
+    denom  TEXT,
+    amount TEXT
+);
+
 CREATE TABLE validator
 (
     consensus_address TEXT NOT NULL PRIMARY KEY, /* Validator consensus address */
@@ -33,22 +39,12 @@ CREATE TABLE transaction
 (
     hash         TEXT    NOT NULL,
     height       BIGINT  NOT NULL REFERENCES block (height),
-    success      BOOLEAN NOT NULL,
 
     /* Body */
-    messages     JSONB   NOT NULL DEFAULT '[]'::JSONB,
     memo         TEXT,
-    signatures   TEXT[]  NOT NULL,
-
-    /* AuthInfo */
-    signer_infos JSONB   NOT NULL DEFAULT '[]'::JSONB,
-    fee          JSONB   NOT NULL DEFAULT '{}'::JSONB,
-
-    /* Tx response */
-    gas_wanted   BIGINT           DEFAULT 0,
-    gas_used     BIGINT           DEFAULT 0,
-    raw_log      TEXT,
-    logs         JSONB,
+    signatures   TEXT[],
+    fee          COIN[] NOT NULL DEFAULT '{}',
+    gas          TEXT,
 
     /* PSQL partition */
     partition_id BIGINT  NOT NULL DEFAULT 0,
@@ -99,11 +95,6 @@ CREATE TABLE pruning
     last_pruned_height BIGINT NOT NULL
 )
 
-CREATE TYPE COIN AS
-(
-    denom  TEXT,
-    amount TEXT
-);
 
 CREATE TABLE supply
 (

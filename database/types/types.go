@@ -7,6 +7,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/forbole/juno/v3/types"
 )
 
 // BlockRow represents a single block row stored inside the database
@@ -51,4 +52,15 @@ func NewDbCoins(coins sdk.Coins) DbCoins {
 		dbCoins = append(dbCoins, &DbCoin{Amount: coin.Amount.String(), Denom: coin.Denom})
 	}
 	return dbCoins
+}
+
+// _________________________________________________________
+
+// NewDBSignatures returns signatures in string array
+func NewDBSignatures(signaturesList []types.BDSignatures) []string {
+	var signatures []string
+	for _, index := range signaturesList {
+		signatures = append(signatures, index.Signature)
+	}
+	return signatures
 }

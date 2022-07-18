@@ -2,10 +2,8 @@ package postgresql
 
 import (
 	"database/sql"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/forbole/juno/v3/logging"
 	"github.com/jmoiron/sqlx"
@@ -117,15 +115,14 @@ VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`
 }
 
 // SaveTx implements database.Database
-func (db *Database) SaveTx(tx *types.Tx) error {
+func (db *Database) SaveTx(tx types.TxResponseTest) error {
 	var partitionID int64
-
 	partitionSize := config.Cfg.Database.PartitionSize
 	if partitionSize > 0 {
 		partitionID = tx.Height / partitionSize
 		err := db.createPartitionIfNotExists("transaction", partitionID)
 		if err != nil {
-			return err
+			return fmt.Errorf("error while creating partition with id %d : %s", partitionID, err)
 		}
 	}
 
@@ -133,67 +130,28 @@ func (db *Database) SaveTx(tx *types.Tx) error {
 }
 
 // saveTxInsidePartition stores the given transaction inside the partition having the given id
-func (db *Database) saveTxInsidePartition(tx *types.Tx, partitionId int64) error {
+func (db *Database) saveTxInsidePartition(tx types.TxResponseTest, partitionId int64) error {
 	sqlStatement := `
 INSERT INTO transaction 
-(hash, height, success, messages, memo, signatures, signer_infos, fee, gas_wanted, gas_used, raw_log, logs, partition_id) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+(hash, height, memo, signatures, fee, gas, partition_id) 
+VALUES ($1, $2, $3, $4, $5, $6, $7) 
 ON CONFLICT (hash, partition_id) DO UPDATE 
 	SET height = excluded.height, 
-		success = excluded.success, 
-		messages = excluded.messages,
 		memo = excluded.memo, 
 		signatures = excluded.signatures, 
-		signer_infos = excluded.signer_infos,
-		fee = excluded.fee, 
-		gas_wanted = excluded.gas_wanted, 
-		gas_used = excluded.gas_used,
-		raw_log = excluded.raw_log, 
-		logs = excluded.logs`
+		fee = excluded.fee,
+		gas = excluded.gas`
 
-	var sigs = make([]string, len(tx.Signatures))
-	for index, sig := range tx.Signatures {
-		sigs[index] = base64.StdEncoding.EncodeToString(sig)
-	}
-
-	var msgs = make([]string, len(tx.Body.Messages))
-	for index, msg := range tx.Body.Messages {
-		bz, err := db.EncodingConfig.Marshaler.MarshalJSON(msg)
+	if tx.Height != 0 {
+		_, err := db.Sql.Exec(sqlStatement,
+			tx.Hash, tx.Height, tx.Memo, pq.Array(dbtypes.NewDBSignatures(tx.Signatures)),
+			pq.Array(dbtypes.NewDbCoins(tx.Fee.Amount)), tx.Fee.Gas, partitionId)
 		if err != nil {
-			return err
+			return fmt.Errorf("error while storing transaction with hash %s : %s", tx.Hash, err)
 		}
-		msgs[index] = string(bz)
-	}
-	msgsBz := fmt.Sprintf("[%s]", strings.Join(msgs, ","))
-
-	feeBz, err := db.EncodingConfig.Marshaler.MarshalJSON(tx.AuthInfo.Fee)
-	if err != nil {
-		return fmt.Errorf("failed to JSON encode tx fee: %s", err)
 	}
 
-	var sigInfos = make([]string, len(tx.AuthInfo.SignerInfos))
-	for index, info := range tx.AuthInfo.SignerInfos {
-		bz, err := db.EncodingConfig.Marshaler.MarshalJSON(info)
-		if err != nil {
-			return err
-		}
-		sigInfos[index] = string(bz)
-	}
-	sigInfoBz := fmt.Sprintf("[%s]", strings.Join(sigInfos, ","))
-
-	logsBz, err := db.EncodingConfig.Amino.MarshalJSON(tx.Logs)
-	if err != nil {
-		return err
-	}
-
-	_, err = db.Sql.Exec(sqlStatement,
-		tx.TxHash, tx.Height, tx.Successful(),
-		msgsBz, tx.Body.Memo, pq.Array(sigs),
-		sigInfoBz, string(feeBz),
-		tx.GasWanted, tx.GasUsed, tx.RawLog, string(logsBz),
-		partitionId,
-	)
-	return err
+	return nil
 }
 
 // HasValidator implements database.Database

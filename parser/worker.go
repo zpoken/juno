@@ -115,19 +115,17 @@ func (w Worker) Process(height int64) error {
 		return fmt.Errorf("failed to get block results from node: %s", err)
 	}
 
-	// txs, err := w.node.Txs(block)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to get transactions for block: %s", err)
-	// }
-
-	// fmt.Printf("\n TXS %v \n ", txs)
+	txs, err := w.node.Txs(block)
+	if err != nil {
+		return fmt.Errorf("failed to get transactions for block: %s", err)
+	}
 
 	vals, err := w.node.Validators(height)
 	if err != nil {
 		return fmt.Errorf("failed to get validators for block: %s", err)
 	}
 
-	return w.ExportBlock(block, events, vals)
+	return w.ExportBlock(block, events, txs, vals)
 }
 
 // ProcessTransactions fetches transactions for a given height and stores them into the database.
@@ -191,7 +189,7 @@ func (w Worker) SaveValidators(vals []*tmtypes.Validator) error {
 // and persists them to the database along with attributable metadata. An error
 // is returned if the write fails.
 func (w Worker) ExportBlock(
-	b *tmctypes.ResultBlock, r *tmctypes.ResultBlockResults, vals *tmctypes.ResultValidators,
+	b *tmctypes.ResultBlock, r *tmctypes.ResultBlockResults, txs []types.TxResponseTest, vals *tmctypes.ResultValidators,
 ) error {
 	// Save all validators
 	err := w.SaveValidators(vals.Validators)
@@ -229,7 +227,7 @@ func (w Worker) ExportBlock(
 	}
 
 	// Export the transactions
-	return nil
+	return w.ExportTxs(txs)
 }
 
 // ExportCommit accepts a block commitment and a corresponding set of
@@ -268,42 +266,13 @@ func (w Worker) ExportCommit(commit *tmtypes.Commit, vals *tmctypes.ResultValida
 
 // ExportTxs accepts a slice of transactions and persists then inside the database.
 // An error is returned if the write fails.
-func (w Worker) ExportTxs(txs []*types.Tx) error {
-	// Handle all the transactions inside the block
+func (w Worker) ExportTxs(txs []types.TxResponseTest) error {
+	// Handle all transactions inside the block
 	for _, tx := range txs {
-		// Save the transaction itself
+		// Save  transaction in database
 		err := w.db.SaveTx(tx)
 		if err != nil {
-			return fmt.Errorf("failed to handle transaction with hash %s: %s", tx.TxHash, err)
-		}
-
-		// Call the tx handlers
-		for _, module := range w.modules {
-			if transactionModule, ok := module.(modules.TransactionModule); ok {
-				err = transactionModule.HandleTx(tx)
-				if err != nil {
-					w.logger.TxError(module, tx, err)
-				}
-			}
-		}
-
-		// Handle all the messages contained inside the transaction
-		for i, msg := range tx.Body.Messages {
-			var stdMsg sdk.Msg
-			err = w.codec.UnpackAny(msg, &stdMsg)
-			if err != nil {
-				return fmt.Errorf("error while unpacking message: %s", err)
-			}
-
-			// Call the handlers
-			for _, module := range w.modules {
-				if messageModule, ok := module.(modules.MessageModule); ok {
-					err = messageModule.HandleMsg(i, stdMsg, tx)
-					if err != nil {
-						w.logger.MsgError(module, tx, stdMsg, err)
-					}
-				}
-			}
+			return fmt.Errorf("failed to handle transaction with hash %s: %s", tx.Hash, err)
 		}
 	}
 

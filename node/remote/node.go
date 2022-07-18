@@ -224,25 +224,10 @@ func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]bdtypes.TxResponseTest, erro
 	for _, t := range block.Block.Txs {
 		err := json.Unmarshal(t, &transaction)
 		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal transaction with hash %s: %s", fmt.Sprintf("%X", t.Hash()), err)
+			// continue
 		}
-		txResponses = append(txResponses, bdtypes.NewTxResponseTest(transaction.Fee, transaction.Memo, transaction.Msg, transaction.Signatures))
+		txResponses = append(txResponses, bdtypes.NewTxResponseTest(transaction.Fee, transaction.Memo, transaction.Msg, transaction.Signatures, fmt.Sprintf("%X", t.Hash()), block.Block.Height))
 	}
-
-	response := make([]bdtypes.TxResponse, len(block.Block.Txs), len(block.Block.Txs))
-
-	// get tx details from the node
-	for i, tmTx := range block.Block.Txs {
-		txResponse, err := cp.Tx(fmt.Sprintf("%X", tmTx.Hash()))
-		if err != nil {
-			return nil, err
-		}
-		response[i] = txResponse
-		fmt.Printf("#### txResponse %v #####", txResponse)
-
-	}
-
-	fmt.Printf("#### %v #####", response)
 
 	return txResponses, nil
 }
