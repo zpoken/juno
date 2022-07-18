@@ -67,6 +67,10 @@ type Database interface {
 	// An error is returned if the operation fails.
 	SaveAccountBalance(balances types.AccountBalance) error
 
+	// SaveToken stores the token details.
+	// An error is returned if the operation fails.
+	SaveToken(token types.Token) error
+
 	// Close closes the connection to the database
 	Close()
 }

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"strings"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -63,4 +64,14 @@ func NewDBSignatures(signaturesList []types.BDSignatures) []string {
 		signatures = append(signatures, index.Signature)
 	}
 	return signatures
+}
+
+// _________________________________________________________
+
+func ToNullString(value string) sql.NullString {
+	value = strings.TrimSpace(value)
+	return sql.NullString{
+		Valid:  value != "",
+		String: value,
+	}
 }
