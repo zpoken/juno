@@ -7,18 +7,18 @@ import (
 	"syscall"
 	"time"
 
-	parsecmdtypes "github.com/forbole/juno/v3/cmd/parse/types"
-	"github.com/forbole/juno/v3/types/utils"
+	parsecmdtypes "github.com/zpoken/juno/v3/cmd/parse/types"
+	"github.com/zpoken/juno/v3/types/utils"
 
-	"github.com/forbole/juno/v3/logging"
+	"github.com/zpoken/juno/v3/logging"
 
-	"github.com/forbole/juno/v3/types/config"
+	"github.com/zpoken/juno/v3/types/config"
 
 	"github.com/go-co-op/gocron"
 
-	"github.com/forbole/juno/v3/modules"
-	"github.com/forbole/juno/v3/parser"
-	"github.com/forbole/juno/v3/types"
+	"github.com/zpoken/juno/v3/modules"
+	"github.com/zpoken/juno/v3/parser"
+	"github.com/zpoken/juno/v3/types"
 
 	"github.com/spf13/cobra"
 )

@@ -8,7 +8,7 @@ import (
 
 	"github.com/pelletier/go-toml"
 
-	"github.com/forbole/juno/v3/types/config"
+	"github.com/zpoken/juno/v3/types/config"
 )
 
 // GetConfig returns the configuration reading it from the config.toml file present inside the home directory

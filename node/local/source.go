@@ -20,7 +20,7 @@ import (
 	tmstore "github.com/tendermint/tendermint/store"
 	db "github.com/tendermint/tm-db"
 
-	"github.com/forbole/juno/v3/node"
+	"github.com/zpoken/juno/v3/node"
 )
 
 var (

@@ -4,18 +4,18 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	parsecmdtypes "github.com/forbole/juno/v3/cmd/parse/types"
+	parsecmdtypes "github.com/zpoken/juno/v3/cmd/parse/types"
 
 	"gopkg.in/yaml.v3"
 
-	v1 "github.com/forbole/juno/v3/cmd/migrate/v1"
+	v1 "github.com/zpoken/juno/v3/cmd/migrate/v1"
 
-	loggingconfig "github.com/forbole/juno/v3/logging/config"
-	"github.com/forbole/juno/v3/modules/pruning"
-	"github.com/forbole/juno/v3/modules/telemetry"
-	nodeconfig "github.com/forbole/juno/v3/node/config"
-	"github.com/forbole/juno/v3/node/remote"
-	"github.com/forbole/juno/v3/types/config"
+	loggingconfig "github.com/zpoken/juno/v3/logging/config"
+	"github.com/zpoken/juno/v3/modules/pruning"
+	"github.com/zpoken/juno/v3/modules/telemetry"
+	nodeconfig "github.com/zpoken/juno/v3/node/config"
+	"github.com/zpoken/juno/v3/node/remote"
+	"github.com/zpoken/juno/v3/types/config"
 )
 
 // RunMigration runs the migration that migrates the data from v1 to v2
