@@ -192,7 +192,7 @@ func (w Worker) SaveValidators(vals []*tmtypes.Validator) error {
 // and persists them to the database along with attributable metadata. An error
 // is returned if the write fails.
 func (w Worker) ExportBlock(
-	b *tmctypes.ResultBlock, r *tmctypes.ResultBlockResults, txs []*types.Tx, vals *tmctypes.ResultValidators,
+	b *tmctypes.ResultBlock, r *tmctypes.ResultBlockResults, txs []*tmctypes.ResultTx, vals *tmctypes.ResultValidators,
 ) error {
 	// Save all validators
 	err := w.SaveValidators(vals.Validators)
@@ -208,7 +208,7 @@ func (w Worker) ExportBlock(
 	}
 
 	// Save the block
-	err = w.db.SaveBlock(types.NewBlockFromTmBlock(b, sumGasTxs(txs)))
+	err = w.db.SaveBlock(types.NewBlockFromTmBlock(b, 0))
 	if err != nil {
 		return fmt.Errorf("failed to persist block: %s", err)
 	}
@@ -222,7 +222,7 @@ func (w Worker) ExportBlock(
 	// Call the block handlers
 	for _, module := range w.modules {
 		if blockModule, ok := module.(modules.BlockModule); ok {
-			err = blockModule.HandleBlock(b, r, txs, vals)
+			err = blockModule.HandleBlock(b, r, nil, vals)
 			if err != nil {
 				w.logger.BlockError(module, b, err)
 			}
@@ -269,10 +269,10 @@ func (w Worker) ExportCommit(commit *tmtypes.Commit, vals *tmctypes.ResultValida
 
 // saveTx accepts the transaction and persists it inside the database.
 // An error is returned if the write fails.
-func (w Worker) saveTx(tx *types.Tx) error {
+func (w Worker) saveTx(tx *tmctypes.ResultTx) error {
 	err := w.db.SaveTx(tx)
 	if err != nil {
-		return fmt.Errorf("failed to handle transaction with hash %s: %s", tx.TxHash, err)
+		return fmt.Errorf("failed to handle transaction with hash %s: %s", tx.Hash, err)
 	}
 	return nil
 }
@@ -326,34 +326,16 @@ func (w Worker) handleMessage(index int, msg sdk.Msg, tx *types.Tx) {
 
 // ExportTxs accepts a slice of transactions and persists then inside the database.
 // An error is returned if the write fails.
-func (w Worker) ExportTxs(txs []*types.Tx) error {
+func (w Worker) ExportTxs(txs []*tmctypes.ResultTx) error {
 	// handle all transactions inside the block
-	for _, tx := range txs {
-		// save the transaction
-		err := w.saveTx(tx)
-		if err != nil {
-			return fmt.Errorf("error while storing txs: %s", err)
-		}
-
-		// call the tx handlers
-		go w.handleTx(tx)
-
-		// handle all messages contained inside the transaction
-		sdkMsgs := make([]sdk.Msg, len(tx.Body.Messages))
-		for i, msg := range tx.Body.Messages {
-			var stdMsg sdk.Msg
-			err := w.codec.UnpackAny(msg, &stdMsg)
-			if err != nil {
-				return err
-			}
-			sdkMsgs[i] = stdMsg
-		}
-
-		// call the msg handlers
-		for i, sdkMsg := range sdkMsgs {
-			go w.handleMessage(i, sdkMsg, tx)
-		}
-	}
+	//for _, tx := range txs {
+	//	// save the transaction
+	//	err := w.saveTx(tx)
+	//	if err != nil {
+	//		return fmt.Errorf("error while storing txs: %s", err)
+	//	}
+	//
+	//}
 
 	totalBlocks := w.db.GetTotalBlocks()
 	logging.DbBlockCount.WithLabelValues("total_blocks_in_db").Set(float64(totalBlocks))

@@ -3,7 +3,10 @@ package postgresql
 import (
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	coretypes "github.com/tendermint/tendermint/rpc/core/types"
+	"strconv"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
@@ -138,19 +141,60 @@ func (db *Database) GetTotalBlocks() int64 {
 }
 
 // SaveTx implements database.Database
-func (db *Database) SaveTx(tx *types.Tx) error {
-	var partitionID int64
+func (db *Database) SaveTx(transaction *coretypes.ResultTx) error {
 
-	partitionSize := config.Cfg.Database.PartitionSize
-	if partitionSize > 0 {
-		partitionID = tx.Height / partitionSize
-		err := db.createPartitionIfNotExists("transaction", partitionID)
+	sqlStatement := `
+INSERT INTO transaction 
+(hash, height, success, messages, memo, signatures, signer_infos, fee, gas_wanted, gas_used, raw_log, logs, partition_id) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+ON CONFLICT (hash, partition_id) DO UPDATE 
+	SET height = excluded.height, 
+		success = excluded.success, 
+		messages = excluded.messages,
+		memo = excluded.memo, 
+		signatures = excluded.signatures, 
+		signer_infos = excluded.signer_infos,
+		fee = excluded.fee, 
+		gas_wanted = excluded.gas_wanted, 
+		gas_used = excluded.gas_used,
+		raw_log = excluded.raw_log, 
+		logs = excluded.logs`
+
+	var msgs = make([]string, len(transaction.TxResult.Events))
+	for index, msg := range transaction.TxResult.Events {
+		bz, err := json.Marshal(msg)
 		if err != nil {
 			return err
 		}
+		msgs[index] = string(bz)
+	}
+	msgsBz := fmt.Sprintf("[%s]", strings.Join(msgs, ","))
+
+	sigInfoBz := "[]"
+
+	logsBz, err := db.EncodingConfig.Amino.MarshalJSON(transaction.Tx)
+	if err != nil {
+		return err
 	}
 
-	return db.saveTxInsidePartition(tx, partitionID)
+	var empty []string
+
+	empty = append(empty, "sig")
+
+	fee := "{}"
+
+	atoi, err := strconv.Atoi(strconv.FormatInt(transaction.Height, 10))
+	_, err = db.SQL.Exec(sqlStatement,
+		transaction.Hash, atoi, true,
+		msgsBz, nil, pq.Array(empty),
+		sigInfoBz, fee,
+		transaction.TxResult.GasWanted,
+		transaction.TxResult.GasUsed,
+		transaction.Tx,
+		string(logsBz),
+		1,
+	)
+	return err
 }
 
 // saveTxInsidePartition stores the given transaction inside the partition having the given id

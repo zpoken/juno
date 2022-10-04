@@ -3,15 +3,18 @@ package remote
 import (
 	"context"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
+	"github.com/rs/zerolog/log"
+	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc"
 
 	constypes "github.com/tendermint/tendermint/consensus/types"
@@ -19,13 +22,10 @@ import (
 
 	"github.com/zpoken/juno/v3/node"
 
-	"github.com/cosmos/cosmos-sdk/types/tx"
-
-	"github.com/zpoken/juno/v3/types"
-
 	httpclient "github.com/tendermint/tendermint/rpc/client/http"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	jsonrpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
+	penumbra "go.buf.build/grpc/go/penumbra-zone/penumbra/penumbra/client/v1alpha1"
 )
 
 var (
@@ -35,11 +35,12 @@ var (
 // Node implements a wrapper around both a Tendermint RPCConfig client and a
 // chain SDK REST client that allows for essential data queries.
 type Node struct {
-	ctx             context.Context
-	codec           codec.Codec
-	client          *httpclient.HTTP
-	txServiceClient tx.ServiceClient
-	grpcConnection  *grpc.ClientConn
+	ctx                  context.Context
+	codec                codec.Codec
+	client               *httpclient.HTTP
+	grpcConnection       *grpc.ClientConn
+	obliviousQueryClient penumbra.ObliviousQueryClient
+	specificQueryClient  penumbra.SpecificQueryClient
 }
 
 // NewNode allows to build a new Node instance
@@ -72,12 +73,12 @@ func NewNode(cfg *Details, codec codec.Codec) (*Node, error) {
 	}
 
 	return &Node{
-		ctx:   context.Background(),
-		codec: codec,
-
-		client:          rpcClient,
-		txServiceClient: tx.NewServiceClient(grpcConnection),
-		grpcConnection:  grpcConnection,
+		ctx:                  context.Background(),
+		codec:                codec,
+		client:               rpcClient,
+		grpcConnection:       grpcConnection,
+		obliviousQueryClient: penumbra.NewObliviousQueryClient(grpcConnection),
+		specificQueryClient:  penumbra.NewSpecificQueryClient(grpcConnection),
 	}, nil
 }
 
@@ -201,43 +202,54 @@ func (cp *Node) BlockResults(height int64) (*tmctypes.ResultBlockResults, error)
 	return cp.client.BlockResults(cp.ctx, &height)
 }
 
-// Tx implements node.Node
-func (cp *Node) Tx(hash string) (*types.Tx, error) {
-	res, err := cp.txServiceClient.GetTx(context.Background(), &tx.GetTxRequest{Hash: hash})
-	if err != nil {
-		return nil, err
-	}
-
-	// Decode messages
-	for _, msg := range res.Tx.Body.Messages {
-		var stdMsg sdk.Msg
-		err = cp.codec.UnpackAny(msg, &stdMsg)
-		if err != nil {
-			return nil, fmt.Errorf("error while unpacking message: %s", err)
-		}
-	}
-
-	convTx, err := types.NewTx(res.TxResponse, res.Tx)
-	if err != nil {
-		return nil, fmt.Errorf("error converting transaction: %s", err.Error())
-	}
-
-	return convTx, nil
-}
-
 // Txs implements node.Node
-func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]*types.Tx, error) {
-	txResponses := make([]*types.Tx, len(block.Block.Txs))
-	for i, tmTx := range block.Block.Txs {
-		txResponse, err := cp.Tx(fmt.Sprintf("%X", tmTx.Hash()))
-		if err != nil {
-			return nil, err
+func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]*tmctypes.ResultTx, error) {
+
+	txs := make(map[string]*tmctypes.ResultTx)
+
+	log.Printf("block.Block.Txs %v", len(block.Block.Txs))
+
+	chainID, _ := cp.ChainID()
+	blockRangeStream, _ := cp.obliviousQueryClient.CompactBlockRange(context.Background(), &penumbra.CompactBlockRangeRequest{
+		ChainId:     chainID,
+		StartHeight: uint64(block.Block.Height),
+		EndHeight:   uint64(block.Block.Height),
+		KeepAlive:   false,
+	})
+
+	for {
+		in, err := blockRangeStream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if len(in.NotePayloads) == 0 {
+			break
+		}
+		for _, note := range in.NotePayloads {
+
+			hexTx := hex.EncodeToString(note.Source.Inner)
+
+			resultTx, err := cp.client.Tx(cp.ctx, note.Source.Inner, false)
+			if err != nil {
+				break
+			}
+			log.Printf(resultTx.TxResult.String())
+
+			txs[hexTx] = resultTx
+
 		}
 
-		txResponses[i] = txResponse
 	}
 
-	return txResponses, nil
+	log.Printf("Txs len " + strconv.Itoa(len(txs)))
+
+	v := make([]*tmctypes.ResultTx, 0, len(txs))
+
+	for _, value := range txs {
+		log.Printf(value.TxResult.String())
+		v = append(v, value)
+	}
+	return v, nil
 }
 
 // TxSearch implements node.Node

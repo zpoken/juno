@@ -2,6 +2,7 @@ package database
 
 import (
 	"github.com/cosmos/cosmos-sdk/simapp/params"
+	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/zpoken/juno/v3/logging"
 
@@ -31,7 +32,7 @@ type Database interface {
 
 	// SaveTx will be called to save each transaction contained inside a block.
 	// An error is returned if the operation fails.
-	SaveTx(tx *types.Tx) error
+	SaveTx(tx *coretypes.ResultTx) error
 
 	// HasValidator returns true if a given validator by consensus address exists.
 	// An error is returned if the operation fails.
