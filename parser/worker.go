@@ -3,6 +3,8 @@ package parser
 import (
 	"encoding/json"
 	"fmt"
+	dexv1alpha1 "go.buf.build/grpc/go/penumbra-zone/penumbra/penumbra/core/dex/v1alpha1"
+	stakev1alpha1 "go.buf.build/grpc/go/penumbra-zone/penumbra/penumbra/core/stake/v1alpha1"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/x/authz"
@@ -130,7 +132,26 @@ func (w Worker) Process(height int64) error {
 		return fmt.Errorf("failed to get validators for block: %s", err)
 	}
 
-	return w.ExportBlock(block, events, txs, vals)
+	var validatorsInfo []*stakev1alpha1.ValidatorInfo
+	if height%10 == 0 {
+		validatorsInfo, err = w.node.ValidatorsInfo(height)
+		if err != nil {
+			return fmt.Errorf("failed to get validators info for block: %s", err)
+		}
+
+	}
+
+	swapOutputData, err := w.node.SwapOutputData(height)
+	if err != nil {
+		w.logger.Error("failed to get swapOutputData  for block: %s", err)
+	}
+
+	reserves, err := w.node.CPMMReserves(height)
+	if err != nil {
+		w.logger.Error("failed to get CPMMReserves  for block: %s", err)
+	}
+
+	return w.ExportBlock(block, events, txs, vals, validatorsInfo, swapOutputData, reserves)
 }
 
 // ProcessTransactions fetches transactions for a given height and stores them into the database.
@@ -192,9 +213,18 @@ func (w Worker) SaveValidators(vals []*tmtypes.Validator) error {
 // and persists them to the database along with attributable metadata. An error
 // is returned if the write fails.
 func (w Worker) ExportBlock(
-	b *tmctypes.ResultBlock, r *tmctypes.ResultBlockResults, txs []*tmctypes.ResultTx, vals *tmctypes.ResultValidators,
+	b *tmctypes.ResultBlock,
+	r *tmctypes.ResultBlockResults,
+	txs []*tmctypes.ResultTx,
+	vals *tmctypes.ResultValidators,
+	validatorsInfo []*stakev1alpha1.ValidatorInfo,
+	batchSwapOutputData []*dexv1alpha1.BatchSwapOutputData,
+	reserves []*dexv1alpha1.Reserves,
 ) error {
 	// Save all validators
+
+	w.logger.Info(" SaveValidators")
+
 	err := w.SaveValidators(vals.Validators)
 	if err != nil {
 		return err
@@ -208,16 +238,23 @@ func (w Worker) ExportBlock(
 	}
 
 	// Save the block
+	w.logger.Info(" SaveBlock", "data", b.Block.Height)
+
 	err = w.db.SaveBlock(types.NewBlockFromTmBlock(b, 0))
 	if err != nil {
 		return fmt.Errorf("failed to persist block: %s", err)
 	}
 
 	// Save the commits
+
+	w.logger.Info(" ExportCommit")
+
 	err = w.ExportCommit(b.Block.LastCommit, vals)
 	if err != nil {
 		return err
 	}
+
+	w.logger.Info(" block handlers")
 
 	// Call the block handlers
 	for _, module := range w.modules {
@@ -225,6 +262,40 @@ func (w Worker) ExportBlock(
 			err = blockModule.HandleBlock(b, r, nil, vals)
 			if err != nil {
 				w.logger.BlockError(module, b, err)
+			}
+		}
+	}
+
+	w.logger.Info(" SaveValidatorInfo")
+
+	for _, info := range validatorsInfo {
+		err := w.db.SaveValidatorInfo(info, b.Block.Height)
+		if err != nil {
+			return fmt.Errorf("failed to save validator info: %s", err)
+		}
+	}
+
+	w.logger.Info(" batchSwapOutputData", "data", batchSwapOutputData)
+
+	for i, swapData := range batchSwapOutputData {
+		w.logger.Debug(" batchSwapOutputData", "index", i, "data", swapData)
+
+		if swapData != nil {
+			w.logger.Debug("saving swapData", "swap data", swapData)
+			err := w.db.SaveSwapOutputData(swapData, b.Block.Height, int64(i+1))
+			if err != nil {
+				return fmt.Errorf("failed to save swapData: %s", err)
+			}
+		}
+	}
+
+	for i, reserve := range reserves {
+		if reserve != nil {
+			w.logger.Debug("saving reserve", "i", i, "reserve", reserve)
+
+			err := w.db.SaveCPMMReserves(reserve, b.Block.Height, int64(i+1))
+			if err != nil {
+				return fmt.Errorf("failed to save reserve: %s", err)
 			}
 		}
 	}
@@ -327,15 +398,14 @@ func (w Worker) handleMessage(index int, msg sdk.Msg, tx *types.Tx) {
 // ExportTxs accepts a slice of transactions and persists then inside the database.
 // An error is returned if the write fails.
 func (w Worker) ExportTxs(txs []*tmctypes.ResultTx) error {
-	// handle all transactions inside the block
-	//for _, tx := range txs {
-	//	// save the transaction
-	//	err := w.saveTx(tx)
-	//	if err != nil {
-	//		return fmt.Errorf("error while storing txs: %s", err)
-	//	}
-	//
-	//}
+	for _, tx := range txs {
+		// save the transaction
+		err := w.saveTx(tx)
+		if err != nil {
+			return fmt.Errorf("error while storing txs: %s", err)
+		}
+
+	}
 
 	totalBlocks := w.db.GetTotalBlocks()
 	logging.DbBlockCount.WithLabelValues("total_blocks_in_db").Set(float64(totalBlocks))

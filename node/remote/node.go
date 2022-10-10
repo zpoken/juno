@@ -6,9 +6,11 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/rs/zerolog/log"
+	cryptov1alpha1 "go.buf.build/grpc/go/penumbra-zone/penumbra/penumbra/core/crypto/v1alpha1"
+	dexv1alpha1 "go.buf.build/grpc/go/penumbra-zone/penumbra/penumbra/core/dex/v1alpha1"
+	stakev1alpha1 "go.buf.build/grpc/go/penumbra-zone/penumbra/penumbra/core/stake/v1alpha1"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -241,8 +243,6 @@ func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]*tmctypes.ResultTx, error) {
 
 	}
 
-	log.Printf("Txs len " + strconv.Itoa(len(txs)))
-
 	v := make([]*tmctypes.ResultTx, 0, len(txs))
 
 	for _, value := range txs {
@@ -250,6 +250,129 @@ func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]*tmctypes.ResultTx, error) {
 		v = append(v, value)
 	}
 	return v, nil
+}
+
+func (cp *Node) ValidatorsInfo(height int64) ([]*stakev1alpha1.ValidatorInfo, error) {
+
+	chainID, _ := cp.ChainID()
+
+	validators := make([]*stakev1alpha1.ValidatorInfo, 0)
+
+	validatorInfo, err := cp.obliviousQueryClient.ValidatorInfo(context.Background(), &penumbra.ValidatorInfoRequest{
+		ChainId:      chainID,
+		ShowInactive: true,
+	})
+
+	for {
+		in, err := validatorInfo.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Error().Str("module", "staking").Err(err)
+		}
+		if in == nil {
+			continue
+		}
+		validators = append(validators, in)
+
+	}
+
+	return validators, err
+}
+
+func getTradingPairs() []*dexv1alpha1.TradingPair {
+
+	pairs := make([]*dexv1alpha1.TradingPair, 0)
+
+	upenumbra, _ := base64.StdEncoding.DecodeString("KeqcLzNx9qSH5+lcJHBB9KNW+YPrBk5dKzvPMiypahA=")
+	ugm, _ := base64.StdEncoding.DecodeString("HW2Eq3UZVSBttoUwUi/MUtE7rr2UU7/UH500byp7OAc=")
+	ugn, _ := base64.StdEncoding.DecodeString("nwPDkQq3OvLnBwGTD+nmv1Ifb2GEmFCgNHrU++9BsRE=")
+
+	tradingPair1 := &dexv1alpha1.TradingPair{
+		Asset_1: &cryptov1alpha1.AssetId{
+			Inner: ugm,
+		},
+		Asset_2: &cryptov1alpha1.AssetId{
+			Inner: ugn,
+		},
+	}
+
+	pairs = append(pairs, tradingPair1)
+
+	tradingPair2 := &dexv1alpha1.TradingPair{
+		Asset_1: &cryptov1alpha1.AssetId{
+			Inner: ugm,
+		},
+		Asset_2: &cryptov1alpha1.AssetId{
+			Inner: upenumbra,
+		},
+	}
+
+	pairs = append(pairs, tradingPair2)
+
+	tradingPair3 := &dexv1alpha1.TradingPair{
+		Asset_1: &cryptov1alpha1.AssetId{
+			Inner: upenumbra,
+		},
+		Asset_2: &cryptov1alpha1.AssetId{
+			Inner: ugn,
+		},
+	}
+
+	pairs = append(pairs, tradingPair3)
+
+	return pairs
+}
+
+func (cp *Node) SwapOutputData(height int64) ([]*dexv1alpha1.BatchSwapOutputData, error) {
+
+	pairs := getTradingPairs()
+
+	swapData := make([]*dexv1alpha1.BatchSwapOutputData, 0, len(pairs))
+
+	for _, pair := range pairs {
+		data, err := cp.specificQueryClient.BatchSwapOutputData(context.Background(), &penumbra.BatchSwapOutputDataRequest{
+			Height:      uint64(height),
+			TradingPair: pair,
+		})
+		if err != nil {
+			swapData = append(swapData, nil)
+
+		} else {
+
+			swapData = append(swapData, data)
+			log.Printf("SwapOutputData append ", data)
+		}
+
+	}
+
+	return swapData, nil
+
+}
+
+func (cp *Node) CPMMReserves(height int64) ([]*dexv1alpha1.Reserves, error) {
+
+	pairs := getTradingPairs()
+
+	reserves := make([]*dexv1alpha1.Reserves, 0, len(pairs))
+
+	for _, pair := range pairs {
+		data, err := cp.specificQueryClient.StubCPMMReserves(context.Background(), &penumbra.StubCPMMReservesRequest{
+			TradingPair: pair,
+		})
+		if err != nil {
+			reserves = append(reserves, nil)
+
+		} else {
+
+			reserves = append(reserves, data)
+			log.Printf("CPMMReserves append ", data)
+		}
+
+	}
+
+	return reserves, nil
 }
 
 // TxSearch implements node.Node

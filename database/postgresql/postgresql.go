@@ -3,9 +3,15 @@ package postgresql
 import (
 	"database/sql"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/bech32"
+	"github.com/tendermint/tendermint/crypto"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
+	dexv1alpha1 "go.buf.build/grpc/go/penumbra-zone/penumbra/penumbra/core/dex/v1alpha1"
+	stakev1alpha1 "go.buf.build/grpc/go/penumbra-zone/penumbra/penumbra/core/stake/v1alpha1"
 	"strconv"
 	"strings"
 
@@ -185,12 +191,12 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 
 	atoi, err := strconv.Atoi(strconv.FormatInt(transaction.Height, 10))
 	_, err = db.SQL.Exec(sqlStatement,
-		transaction.Hash, atoi, true,
+		transaction.Hash.String(), atoi, true,
 		msgsBz, nil, pq.Array(empty),
 		sigInfoBz, fee,
 		transaction.TxResult.GasWanted,
 		transaction.TxResult.GasUsed,
-		transaction.Tx,
+		transaction.Tx.String(),
 		string(logsBz),
 		1,
 	)
@@ -258,6 +264,180 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 		tx.GasWanted, tx.GasUsed, tx.RawLog, string(logsBz),
 		partitionID,
 	)
+	return err
+}
+
+func (db *Database) SaveValidatorInfo(validator *stakev1alpha1.ValidatorInfo, height int64) error {
+
+	bech32Prefix := sdk.GetConfig().GetBech32ConsensusPubPrefix()
+	consPubKey, _ := bech32.ConvertAndEncode(bech32Prefix, validator.GetValidator().GetConsensusKey())
+
+	validatorAddress := crypto.AddressHash(validator.GetValidator().GetConsensusKey())
+	consAddr := sdk.ConsAddress(validatorAddress).String()
+
+	indetityKey, _ := bech32.ConvertAndEncode("penumbravalid", validator.GetValidator().GetIdentityKey().GetIk())
+
+	selfDelegationAccQuery := `
+INSERT INTO account (address) VALUES ($1) ON CONFLICT DO NOTHING`
+
+	_, _ = db.SQL.Exec(selfDelegationAccQuery, indetityKey)
+
+	validatorQuery := `
+INSERT INTO validator (consensus_address, consensus_pubkey) VALUES ($1, $2) ON CONFLICT DO NOTHING `
+
+	_, _ = db.SQL.Exec(validatorQuery, consAddr, consPubKey)
+
+	validatorInfoQuery := `
+INSERT INTO validator_info (consensus_address, operator_address, self_delegate_address, max_change_rate, max_rate, height) 
+	VALUES($1, $2, $3, $4, $5, $6)
+	ON CONFLICT (consensus_address) DO UPDATE 
+	SET consensus_address = excluded.consensus_address,
+		operator_address = excluded.operator_address,
+		max_change_rate = excluded.max_change_rate,
+		max_rate = excluded.max_rate,
+		height = excluded.height
+WHERE validator_info.height <= excluded.height`
+
+	_, err := db.SQL.Exec(validatorInfoQuery,
+		ToNullString(consAddr),
+		ToNullString(consAddr),
+		ToNullString(indetityKey),
+		validator.GetRateData().ValidatorRewardRate,
+		validator.GetRateData().ValidatorRewardRate,
+		height)
+
+	// Insert the description
+	stmt := `
+INSERT INTO validator_description (
+	validator_address, moniker, identity,  website, details, height
+)
+VALUES($1, $2, $3, $4, $5, $6)
+ON CONFLICT (validator_address) DO UPDATE
+    SET moniker = excluded.moniker, 
+        identity = excluded.identity, 
+        avatar_url = excluded.avatar_url,
+        website = excluded.website, 
+        security_contact = excluded.security_contact, 
+        details = excluded.details,
+        height = excluded.height
+WHERE validator_description.height <= excluded.height`
+
+	_, err = db.SQL.Exec(stmt,
+		ToNullString(consAddr),
+		ToNullString(validator.GetValidator().GetName()),
+		ToNullString(validator.GetValidator().GetName()),
+		ToNullString(validator.GetValidator().GetWebsite()),
+		ToNullString(validator.GetValidator().GetDescription()),
+		height,
+	)
+	if err != nil {
+		//return fmt.Errorf("error while storing validator description: %s", err)
+	}
+
+	stmt = `
+INSERT INTO validator_commission (validator_address, commission, height) 
+VALUES ($1, $2, $3)
+ON CONFLICT (validator_address) DO UPDATE 
+    SET commission = excluded.commission, 
+        min_self_delegation = excluded.min_self_delegation,
+        height = excluded.height
+WHERE validator_commission.height <= excluded.height`
+	_, err = db.SQL.Exec(stmt, consAddr, validator.GetRateData().GetValidatorRewardRate()/100000, height)
+	if err != nil {
+		//return fmt.Errorf("error while storing validator commission: %s", err)
+	}
+
+	stmt = `INSERT INTO validator_voting_power (validator_address, voting_power, height)VALUES ($1, $2, $3) ON CONFLICT (validator_address) DO UPDATE 
+	SET voting_power = excluded.voting_power, 
+		height = excluded.height
+WHERE validator_voting_power.height <= excluded.height `
+
+	_, err = db.SQL.Exec(stmt, consAddr, validator.GetStatus().VotingPower, height)
+
+	statusStmt := `INSERT INTO validator_status (validator_address, status, jailed, tombstoned, height) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (validator_address) DO UPDATE 
+	SET status = excluded.status,
+	    jailed = excluded.jailed,
+	    tombstoned = excluded.tombstoned,
+	    height = excluded.height
+WHERE validator_status.height <= excluded.height `
+
+	if validator.GetStatus().GetState().State == 1 {
+		_, err = db.SQL.Exec(statusStmt, consAddr, 3, validator.GetStatus().GetState().State == 2, validator.GetStatus().GetState().State == 3, height)
+	} else {
+		_, err = db.SQL.Exec(statusStmt, consAddr, validator.GetStatus().GetState().State, validator.GetStatus().GetState().State == 2, validator.GetStatus().GetState().State == 3, height)
+
+	}
+
+	if err != nil {
+
+		return fmt.Errorf("error while storing validator infos: %s", err)
+	}
+
+	return nil
+}
+
+func ToNullString(value string) sql.NullString {
+	value = strings.TrimSpace(value)
+	return sql.NullString{
+		Valid:  value != "",
+		String: value,
+	}
+}
+
+func (db *Database) SaveSwapOutputData(swapOutputData *dexv1alpha1.BatchSwapOutputData,
+	height int64,
+	tradingPairId int64) error {
+
+	swapQuery := `
+INSERT INTO swap_output_data (height, trading_pair_id, delta_1, delta_2, lambda_1, lambda_2, success) 
+	VALUES($1, $2, $3, $4, $5, $6, $7)
+		ON CONFLICT (id) DO UPDATE
+		    SET
+	 height = excluded.height,
+		trading_pair_id = excluded.trading_pair_id,
+		delta_1 = excluded.delta_1,
+		delta_2 = excluded.delta_2,
+		lambda_1 = excluded.lambda_1,
+	    lambda_2 = excluded.lambda_2,
+	    success = excluded.success`
+
+	_, err := db.SQL.Exec(swapQuery,
+		height,
+		tradingPairId,
+		swapOutputData.Delta_1,
+		swapOutputData.Delta_2,
+		swapOutputData.Lambda_1,
+		swapOutputData.Lambda_2,
+		swapOutputData.Success)
+
+	return err
+}
+
+func (db *Database) SaveCPMMReserves(reserves *dexv1alpha1.Reserves, height int64, tradingPairId int64) error {
+
+	r1 := int64(binary.LittleEndian.Uint64(reserves.R1.Inner))
+
+	r2 := int64(binary.LittleEndian.Uint64(reserves.R2.Inner))
+
+	db.Logger.Info("r1", "r1", r1)
+	db.Logger.Info("r2", "r2", r1)
+
+	swapQuery := `
+INSERT INTO cpmm_reserve (height, trading_pair_id, r1, r2) 
+	VALUES($1, $2, $3, $4)
+		ON CONFLICT (id) DO UPDATE
+		    SET
+	 height = excluded.height,
+		trading_pair_id = excluded.trading_pair_id,
+		r1 = excluded.r1,
+		    r2 = excluded.r2`
+
+	_, err := db.SQL.Exec(swapQuery,
+		height,
+		tradingPairId,
+		r1,
+		r2)
+
 	return err
 }
 

@@ -26,7 +26,7 @@ parsing:
     listen_new_blocks: true
     parse_old_blocks: true
     parse_genesis: false
-    start_height: 387739
+    start_height: 20000
     average_block_time: 1s
 #    genesis_file_path: ~/.penumbra/testnet_data/node0/tendermint/config/genesis.json
 

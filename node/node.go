@@ -2,6 +2,8 @@ package node
 
 import (
 	"context"
+	dexv1alpha1 "go.buf.build/grpc/go/penumbra-zone/penumbra/penumbra/core/dex/v1alpha1"
+	stakev1alpha1 "go.buf.build/grpc/go/penumbra-zone/penumbra/penumbra/core/stake/v1alpha1"
 
 	constypes "github.com/tendermint/tendermint/consensus/types"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -54,6 +56,12 @@ type Node interface {
 	// cancel function and an error is returned. It is up to the caller to cancel
 	// the context and handle any errors appropriately.
 	SubscribeNewBlocks(subscriber string) (<-chan tmctypes.ResultEvent, context.CancelFunc, error)
+
+	ValidatorsInfo(height int64) ([]*stakev1alpha1.ValidatorInfo, error)
+
+	SwapOutputData(height int64) ([]*dexv1alpha1.BatchSwapOutputData, error)
+
+	CPMMReserves(height int64) ([]*dexv1alpha1.Reserves, error)
 
 	// Stop defers the node stop execution to the client.
 	Stop()

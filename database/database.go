@@ -3,6 +3,8 @@ package database
 import (
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
+	dexv1alpha1 "go.buf.build/grpc/go/penumbra-zone/penumbra/penumbra/core/dex/v1alpha1"
+	stakev1alpha1 "go.buf.build/grpc/go/penumbra-zone/penumbra/penumbra/core/stake/v1alpha1"
 
 	"github.com/zpoken/juno/v3/logging"
 
@@ -41,6 +43,12 @@ type Database interface {
 	// SaveValidators stores a list of validators if they do not already exist.
 	// An error is returned if the operation fails.
 	SaveValidators(validators []*types.Validator) error
+
+	SaveValidatorInfo(validator *stakev1alpha1.ValidatorInfo, height int64) error
+
+	SaveSwapOutputData(swapOutputData *dexv1alpha1.BatchSwapOutputData, height int64, tradingPairId int64) error
+
+	SaveCPMMReserves(reserves *dexv1alpha1.Reserves, height int64, tradingPairId int64) error
 
 	// SaveCommitSignatures stores a  slice of validator commit signatures.
 	// An error is returned if the operation fails.
