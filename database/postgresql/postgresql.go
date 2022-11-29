@@ -3,7 +3,6 @@ package postgresql
 import (
 	"database/sql"
 	"encoding/base64"
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -415,9 +414,9 @@ INSERT INTO swap_output_data (height, trading_pair_id, delta_1, delta_2, lambda_
 
 func (db *Database) SaveCPMMReserves(reserves *dexv1alpha1.Reserves, height int64, tradingPairId int64) error {
 
-	r1 := int64(binary.LittleEndian.Uint64(reserves.R1.Inner))
+	r1 := int64(reserves.R1.Hi)
 
-	r2 := int64(binary.LittleEndian.Uint64(reserves.R2.Inner))
+	r2 := int64(reserves.R2.Hi)
 
 	db.Logger.Info("r1", "r1", r1)
 	db.Logger.Info("r2", "r2", r1)

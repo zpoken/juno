@@ -41,8 +41,8 @@ type Node struct {
 	codec                codec.Codec
 	client               *httpclient.HTTP
 	grpcConnection       *grpc.ClientConn
-	obliviousQueryClient penumbra.ObliviousQueryClient
-	specificQueryClient  penumbra.SpecificQueryClient
+	obliviousQueryClient penumbra.ObliviousQueryServiceClient
+	specificQueryClient  penumbra.SpecificQueryServiceClient
 }
 
 // NewNode allows to build a new Node instance
@@ -79,8 +79,8 @@ func NewNode(cfg *Details, codec codec.Codec) (*Node, error) {
 		codec:                codec,
 		client:               rpcClient,
 		grpcConnection:       grpcConnection,
-		obliviousQueryClient: penumbra.NewObliviousQueryClient(grpcConnection),
-		specificQueryClient:  penumbra.NewSpecificQueryClient(grpcConnection),
+		obliviousQueryClient: penumbra.NewObliviousQueryServiceClient(grpcConnection),
+		specificQueryClient:  penumbra.NewSpecificQueryServiceClient(grpcConnection),
 	}, nil
 }
 
@@ -224,10 +224,10 @@ func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]*tmctypes.ResultTx, error) {
 		if err == io.EOF {
 			break
 		}
-		if len(in.NotePayloads) == 0 {
+		if len(in.CompactBlock.NotePayloads) == 0 {
 			break
 		}
-		for _, note := range in.NotePayloads {
+		for _, note := range in.CompactBlock.NotePayloads {
 
 			hexTx := hex.EncodeToString(note.Source.Inner)
 
@@ -274,7 +274,7 @@ func (cp *Node) ValidatorsInfo(height int64) ([]*stakev1alpha1.ValidatorInfo, er
 		if in == nil {
 			continue
 		}
-		validators = append(validators, in)
+		validators = append(validators, in.ValidatorInfo)
 
 	}
 
@@ -341,7 +341,7 @@ func (cp *Node) SwapOutputData(height int64) ([]*dexv1alpha1.BatchSwapOutputData
 
 		} else {
 
-			swapData = append(swapData, data)
+			swapData = append(swapData, data.Data)
 			log.Printf("SwapOutputData append ", data)
 		}
 
@@ -366,7 +366,7 @@ func (cp *Node) CPMMReserves(height int64) ([]*dexv1alpha1.Reserves, error) {
 
 		} else {
 
-			reserves = append(reserves, data)
+			reserves = append(reserves, data.Reserves)
 			log.Printf("CPMMReserves append ", data)
 		}
 
