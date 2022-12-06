@@ -360,10 +360,10 @@ WHERE validator_voting_power.height <= excluded.height `
 	    height = excluded.height
 WHERE validator_status.height <= excluded.height `
 
-	if validator.GetStatus().GetState().State == 1 {
-		_, err = db.SQL.Exec(statusStmt, consAddr, 3, validator.GetStatus().GetState().State == 2, validator.GetStatus().GetState().State == 3, height)
+	if validator.GetStatus().GetState().State == 2 {
+		_, err = db.SQL.Exec(statusStmt, consAddr, 3, validator.GetStatus().GetState().State == 3, validator.GetStatus().GetState().State == 4, height)
 	} else {
-		_, err = db.SQL.Exec(statusStmt, consAddr, validator.GetStatus().GetState().State, validator.GetStatus().GetState().State == 2, validator.GetStatus().GetState().State == 3, height)
+		_, err = db.SQL.Exec(statusStmt, consAddr, validator.GetStatus().GetState().State, validator.GetStatus().GetState().State == 3, validator.GetStatus().GetState().State == 4, height)
 
 	}
 
