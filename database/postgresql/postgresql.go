@@ -346,7 +346,7 @@ ON CONFLICT (validator_address) DO UPDATE
         min_self_delegation = excluded.min_self_delegation,
         height = excluded.height
 WHERE validator_commission.height <= excluded.height`
-	_, err = db.SQL.Exec(stmt, consAddr, commissiomBps, height)
+	_, err = db.SQL.Exec(stmt, consAddr, commissiomBps/10000, height)
 	if err != nil {
 		//return fmt.Errorf("error while storing validator commission: %s", err)
 	}
