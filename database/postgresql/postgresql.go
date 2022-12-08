@@ -333,6 +333,11 @@ WHERE validator_description.height <= excluded.height`
 		//return fmt.Errorf("error while storing validator description: %s", err)
 	}
 
+	var commissiomBps = uint32(0)
+
+	for _, stream := range validator.GetValidator().GetFundingStreams() {
+		commissiomBps = commissiomBps + stream.RateBps
+	}
 	stmt = `
 INSERT INTO validator_commission (validator_address, commission, height) 
 VALUES ($1, $2, $3)
@@ -341,7 +346,7 @@ ON CONFLICT (validator_address) DO UPDATE
         min_self_delegation = excluded.min_self_delegation,
         height = excluded.height
 WHERE validator_commission.height <= excluded.height`
-	_, err = db.SQL.Exec(stmt, consAddr, validator.GetRateData().GetValidatorRewardRate()/100000, height)
+	_, err = db.SQL.Exec(stmt, consAddr, commissiomBps, height)
 	if err != nil {
 		//return fmt.Errorf("error while storing validator commission: %s", err)
 	}
