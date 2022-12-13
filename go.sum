@@ -1,5 +1,10 @@
 4d63.com/gochecknoglobals v0.1.0 h1:zeZSRqj5yCg28tCkIV/z/lWbwvNm5qnKVS15PI8nhD0=
 4d63.com/gochecknoglobals v0.1.0/go.mod h1:wfdC5ZjKSPr7CybKEcgJhUOgeAQW1+7WcyK8OvUilfo=
+buf.build/gen/go/penumbra-zone/ibc-go-vendor/grpc/go v1.2.0-20221207234335-378df3992232.4/go.mod h1:3akR8S6A39MLa/+skBr+9zTiq5o/2NtM2bG7CS+/hUU=
+buf.build/gen/go/penumbra-zone/ibc-go-vendor/protocolbuffers/go v1.28.1-20221207234335-378df3992232.4/go.mod h1:DgTZ+2CEkeonO4MjNqdHVoG746QZpyoGnSWDk+JOdcE=
+buf.build/gen/go/penumbra-zone/penumbra/grpc/go v1.2.0-20221211055328-2d38378ab9c6.4 h1:hHLletfk0iUWt+AHDP304dbNwL8KsabSbaL+DfoMBgQ=
+buf.build/gen/go/penumbra-zone/penumbra/grpc/go v1.2.0-20221211055328-2d38378ab9c6.4/go.mod h1:xPsaN8ClwkomamdT3LngXspyS5Zr7gt16NclZyYhKo4=
+buf.build/gen/go/penumbra-zone/penumbra/protocolbuffers/go v1.28.1-20221211055328-2d38378ab9c6.4/go.mod h1:n0TDugb4HZmE8GyCxef1oD83nztV0KRh+2NRN0cH7N4=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.38.0/go.mod h1:990N+gfupTy94rShfmMCWGDn0LpTmnzTp2qbd1dvSRU=
@@ -1640,6 +1645,7 @@ google.golang.org/grpc v1.37.0/go.mod h1:NREThFqKR1f3iQ6oBuvc5LadQuXVGo9rkm5ZGrQ
 google.golang.org/grpc v1.38.0/go.mod h1:NREThFqKR1f3iQ6oBuvc5LadQuXVGo9rkm5ZGrQdJfM=
 google.golang.org/grpc v1.40.0/go.mod h1:ogyxbiOoUXAkP+4+xa6PZSE9DZgIHtSpzjDTB9KAK34=
 google.golang.org/grpc v1.42.0/go.mod h1:k+4IHHFw41K8+bbowsex27ge2rCb65oeWqe4jJ590SU=
+google.golang.org/grpc v1.43.0/go.mod h1:k+4IHHFw41K8+bbowsex27ge2rCb65oeWqe4jJ590SU=
 google.golang.org/grpc v1.46.0/go.mod h1:vN9eftEi1UMyUsIF80+uQXhHjbXYbm0uXoFCACuMGWk=
 google.golang.org/grpc v1.46.2 h1:u+MLGgVf7vRdjEYZ8wDFhAVNmhkbJ5hmrA1LMWK1CAQ=
 google.golang.org/grpc v1.46.2/go.mod h1:vN9eftEi1UMyUsIF80+uQXhHjbXYbm0uXoFCACuMGWk=

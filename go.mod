@@ -25,6 +25,7 @@ require (
 
 require (
 	4d63.com/gochecknoglobals v0.1.0 // indirect
+	buf.build/gen/go/penumbra-zone/penumbra/grpc/go v1.2.0-20221211055328-2d38378ab9c6.4 // indirect
 	filippo.io/edwards25519 v1.0.0-beta.2 // indirect
 	github.com/99designs/keyring v1.1.6 // indirect
 	github.com/Antonboom/errname v0.1.7 // indirect
