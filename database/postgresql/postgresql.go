@@ -301,8 +301,8 @@ WHERE validator_info.height <= excluded.height`
 		ToNullString(consAddr),
 		ToNullString(consAddr),
 		ToNullString(indetityKey),
-		validator.GetRateData().ValidatorRewardRate,
-		validator.GetRateData().ValidatorRewardRate,
+		1,
+		1,
 		height)
 
 	// Insert the description
