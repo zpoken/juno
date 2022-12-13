@@ -224,20 +224,38 @@ func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]*tmctypes.ResultTx, error) {
 		if err == io.EOF {
 			break
 		}
-		if len(in.CompactBlock.NotePayloads) == 0 {
+		if len(in.CompactBlock.StatePayloads) == 0 {
 			break
 		}
-		for _, note := range in.CompactBlock.NotePayloads {
+		for _, statePayload := range in.CompactBlock.StatePayloads {
 
-			hexTx := hex.EncodeToString(note.Source.Inner)
+			note := statePayload.GetNote()
+			if note != nil {
 
-			resultTx, err := cp.client.Tx(cp.ctx, note.Source.Inner, false)
-			if err != nil {
-				break
+				hexTx := hex.EncodeToString(note.Source.Inner)
+
+				resultTx, err := cp.client.Tx(cp.ctx, note.Source.Inner, false)
+				if err != nil {
+					break
+				}
+				log.Printf(resultTx.TxResult.String())
+
+				txs[hexTx] = resultTx
 			}
-			log.Printf(resultTx.TxResult.String())
+			swap := statePayload.GetSwap()
 
-			txs[hexTx] = resultTx
+			if swap != nil {
+
+				hexTx := hex.EncodeToString(swap.Source.Inner)
+
+				resultTx, err := cp.client.Tx(cp.ctx, swap.Source.Inner, false)
+				if err != nil {
+					break
+				}
+				log.Printf(resultTx.TxResult.String())
+
+				txs[hexTx] = resultTx
+			}
 
 		}
 

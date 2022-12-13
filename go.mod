@@ -18,14 +18,13 @@ require (
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.8.0
 	github.com/tendermint/tendermint v0.34.19
-	go.buf.build/grpc/go/penumbra-zone/penumbra v1.4.19
+	go.buf.build/grpc/go/penumbra-zone/penumbra v1.4.30
 	google.golang.org/grpc v1.46.2
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
 	4d63.com/gochecknoglobals v0.1.0 // indirect
-	buf.build/gen/go/penumbra-zone/penumbra/grpc/go v1.2.0-20221211055328-2d38378ab9c6.4 // indirect
 	filippo.io/edwards25519 v1.0.0-beta.2 // indirect
 	github.com/99designs/keyring v1.1.6 // indirect
 	github.com/Antonboom/errname v0.1.7 // indirect
@@ -226,7 +225,7 @@ require (
 	github.com/yeya24/promlinter v0.2.0 // indirect
 	github.com/zondax/hid v0.9.0 // indirect
 	gitlab.com/bosi/decorder v0.2.3 // indirect
-	go.buf.build/grpc/go/penumbra-zone/ibc-go-vendor v1.4.1 // indirect
+	go.buf.build/grpc/go/penumbra-zone/ibc-go-vendor v1.4.3 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
