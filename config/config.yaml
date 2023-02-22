@@ -34,8 +34,8 @@ database:
     name: bdjuno
     host: 195.201.146.231
     port: 5432
-    user: valik
-    password: qwZX12as
+    user: xxxx
+    password: xxxxxxx
     schema: public
     max_open_connections: 1
     max_idle_connections: 1
